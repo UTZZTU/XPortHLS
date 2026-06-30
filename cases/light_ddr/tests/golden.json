@@ -1,0 +1,11 @@
+{
+  "test": "vadd_light_ddr",
+  "n": 1024,
+  "input_value_1": 1,
+  "input_value_2": 2,
+  "expected_value": 3,
+  "tolerance": {
+    "abs": 0,
+    "rel": 0
+  }
+}

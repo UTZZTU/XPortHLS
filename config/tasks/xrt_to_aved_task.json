@@ -1,0 +1,25 @@
+{
+  "task_id": "xrt_to_aved_v80_2025_1_competition",
+  "title": "Version-aware migration of XRT-based HLS applications to native AVED projects",
+  "source": {
+    "runtime": "XRT",
+    "supported_scope": "frozen_competition_case_set"
+  },
+  "target": {
+    "platform_config": "config/platforms/v80_aved_2025_1_stub.json"
+  },
+  "validation_levels": [
+    "L0_static",
+    "L1_software",
+    "L2_hls_csim",
+    "L3_hls_synth",
+    "L4_vivado_interface",
+    "L5_board"
+  ],
+  "competition_policy": {
+    "correctness_before_ppa": true,
+    "trace_every_run": true,
+    "record_token_usage": true,
+    "record_tool_calls": true
+  }
+}

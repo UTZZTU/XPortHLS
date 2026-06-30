@@ -1,0 +1,25 @@
+{
+  "cases": [
+    {
+      "case_id": "light_ddr",
+      "role": "lightweight_supplement_case",
+      "path": "cases/light_ddr",
+      "status": "placeholder",
+      "expected_features": ["single_kernel", "DDR", "XRT_host", "CPU_golden"]
+    },
+    {
+      "case_id": "medium_hbm",
+      "role": "medium_supplement_case",
+      "path": "cases/medium_hbm",
+      "status": "placeholder",
+      "expected_features": ["HBM_or_multi_port", "XRT_host", "clear_tests"]
+    },
+    {
+      "case_id": "hisparse",
+      "role": "complex_main_case",
+      "path": "cases/hisparse",
+      "status": "waiting_for_user_code",
+      "expected_features": ["U280", "XRT", "Vitis_2020_2", "HBM", "multi_kernel", "stream", "SpMV"]
+    }
+  ]
+}

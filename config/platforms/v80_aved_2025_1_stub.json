@@ -1,0 +1,26 @@
+{
+  "platform_id": "v80_aved_2025_1_stub",
+  "status": "stub_until_real_aved_project_available",
+  "target": {
+    "ecosystem": "AVED",
+    "board": "Alveo V80",
+    "aved_release": "unknown_for_now",
+    "vivado": "2025.1",
+    "vitis_hls": "2025.1",
+    "vitis": "2025.1",
+    "amr": "unknown_for_now",
+    "qdma_driver": "unknown_for_now",
+    "os": "Ubuntu 24.04.4 LTS",
+    "linux_kernel": "6.8.0-101-generic",
+    "output_artifact": "PDI",
+    "memory_policy": {
+      "ddr": "DDR_to_DDR",
+      "hbm": "HBM_to_HBM"
+    }
+  },
+  "notes": [
+    "AVED directory is not currently available on this server.",
+    "V80 board is not currently installed.",
+    "This platform pack is used for IR, contract, trace and generator development."
+  ]
+}

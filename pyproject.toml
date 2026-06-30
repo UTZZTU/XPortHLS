@@ -1,0 +1,12 @@
+[project]
+name = "xporthls"
+version = "0.0.1"
+description = "Version-aware XRT to AVED HLS migration agent framework"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+xporthls = "xporthls.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["xporthls*"]

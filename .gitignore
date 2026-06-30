@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.mypy_cache/
+
+# Secrets
+.env
+*.key
+*.pem
+
+# Build and generated outputs
+build/
+dist/
+*.egg-info/
+.generated/
+*.log
+*.jou
+*.str
+*.wdb
+*.xpr
+*.runs/
+*.cache/
+*.hw/
+*.ip_user_files/
+*.sim/
+*.srcs/
+
+# Xilinx/Vivado/Vitis
+.Xil/
+.vitis/
+_vivado*
+_vitis*
+xsim.dir/
+*.xo
+*.xclbin
+*.pdi
+*.dcp
+*.bit
+
+# Large experiments
+experiments/runs/*
+!experiments/runs/.gitkeep
