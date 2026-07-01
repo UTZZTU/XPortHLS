@@ -1,375 +1,309 @@
 # XPortHLS
 
-**XPortHLS** is a version-aware migration agent framework for migrating XRT/Vitis HLS applications into native AVED projects.
+XPortHLS is an engineering migration framework for moving XRT/Vitis HLS accelerator projects toward an AVED-native project structure.
 
-Recommended competition title:
+The current target is AMD Alveo V80 with AVED and Vivado/Vitis 2025.1. Source projects are expected to come from XRT-based Alveo platforms such as U280, U50, U55C, U200-class designs, and similar Vitis acceleration projects.
 
-> XPortHLS: Version-Aware Migration of XRT-Based HLS Applications to Native AVED Projects
+The project is intentionally built as a compiler-like pipeline: facts are extracted deterministically, normalized into IR, checked against contracts, generated into a target scaffold, and recorded with reproducible evidence. Model-assisted repair can be added later through a bounded adapter layer, but correctness is always decided by contracts, validators, tool reports, and tests.
 
-## 1. Core Principle
+## Current status
 
-XPortHLS is not a free-form code generation chatbot.
-
-It follows:
-
-> Compiler-like Migration Pipeline + Agentic Repair Loop
-
-The deterministic pipeline handles facts, IR, contracts, templates, validation and trace.  
-The LLM only provides candidate explanations, migration plans, failure diagnosis and bounded local patch suggestions.
-
-The LLM is **not**:
-
-- the source of platform facts
-- the executor
-- the correctness judge
-- the owner of trace records
-
-Correctness is decided by contracts, static checks, tools and tests.
-
----
-
-## 2. Current Repository Status
-
-Current implementation:
+XPortHLS is currently an early-stage migration framework. It can run a complete deterministic pipeline on the included `light_ddr` fixture:
 
 ```text
-XPortHLS v0.0.2
-```
-
-Implemented so far:
-
-- Project scaffold
-- CLI entry
-- Environment reporting
-- Trace logger
-- Repository scanner v0
-- ApplicationIR v0
-- PlatformIR v0
-- MigrationContract v0
-- L0 static checker v0
-- light_ddr fixture
-- Git initialized
-
-Current working flow:
-
-```text
-cases/light_ddr
-  ↓
-repo scanner
-  ↓
-ApplicationIR
-  ↓
-MigrationContract
-  ↓
-L0 static checker
-  ↓
-trace
-```
-
----
-
-## 3. Eight-Layer Architecture
-
-XPortHLS uses eight layers:
-
-| Layer | Responsibility | Current Code Status |
-|---|---|---|
-| 1. Case Layer | case.yaml, source code, tests, golden outputs, complexity tags | light_ddr exists, case.yaml not yet |
-| 2. Platform Pack Layer | AVED version pack, capabilities, QDMA/memory/register rules, templates | stub JSON exists |
-| 3. Front-end Layer | repo scan, XRT semantic extraction, HLS interface extraction, build graph extraction | scanner v0 exists |
-| 4. IR / Contract Layer | ApplicationIR, PlatformIR, MigrationContract and subcontracts | v0 exists |
-| 5. Generation Layer | HLS IP, register map, address map, QDMA host, BD/Tcl, build scripts | directory only |
-| 6. Validation Layer | L0-pre, L0-post, L1, L2, L3, L4, L5 | L0 v0 exists |
-| 7. Agent Loop Layer | diagnosis, patch planning, patch control, rollback, revalidation | directory only |
-| 8. Evidence Layer | trace, artifact registry, patch ledger, budget ledger, replay | trace v0 exists |
-
----
-
-## 4. LLM Participation Policy
-
-| Layer | LLM Participation | Degree | LLM Role | Not Allowed |
-|---|---:|---:|---|---|
-| 1. Case Layer | No runtime role | 0–5% | May help write case descriptions offline | Must not invent tests or golden outputs |
-| 2. Platform Pack | Offline only | 5–15% | Help read docs and propose candidate rules | Must not define runtime platform facts dynamically |
-| 3. Front-end | Low to medium | 20–30% | Semantic hints for non-standard repository structure and wrappers | Must not overwrite extracted facts |
-| 4. IR / Contract | Low to medium | 15–25% | Suggest annotations, unknowns and special mapping candidates | Must not create final facts or verified contracts |
-| 5. Generation | Medium | 20–40% | Plan generation steps or produce small bounded diffs | Must not freely generate the whole platform project |
-| 6. Validation | No execution role | 0–5% | May read summarized reports for later diagnosis | Must not judge pass/fail or fake tool results |
-| 7. Agent Loop | High but controlled | 50–70% | Diagnose root cause, choose failure type, propose patch plan | Must not apply unbounded patches or skip validation |
-| 8. Evidence | No write role | 0–5% | May read trace summary for diagnosis or reporting | Must not edit trace, budget, patch ledger or tool records |
-
-Main rule:
-
-> LLM outputs are always candidates. Contracts, controllers, tools and tests decide what is accepted.
-
----
-
-## 5. Planned Development Checklist
-
-### Phase 0 — Repository Scaffold
-
-Status: done.
-
-- [x] Create repository structure
-- [x] Add CLI
-- [x] Add ApplicationIR v0
-- [x] Add PlatformIR v0
-- [x] Add MigrationContract v0
-- [x] Add trace logger
-- [x] Add AVED/V80 2025.1 stub platform config
-- [x] Initialize Git
-
-### Phase 1 — Minimal Case and L0
-
-Status: done.
-
-- [x] Add light_ddr fixture
-- [x] Add XRT-style host.cpp
-- [x] Add HLS-style vadd.cpp
-- [x] Add golden.json
-- [x] Add L0 static checker v0
-- [x] Run scan → contract → L0
-- [x] Commit v0.0.2 baseline
-
-### Phase 2 — XRT Semantic Extractor v1
-
-Status: next.
-
-Goal:
-
-Extract structured XRT host semantics instead of only matching strings.
-
-Checklist:
-
-- [ ] Add `xporthls/scanner/xrt_semantic_extractor.py`
-- [ ] Extract `xrt::bo` buffer names
-- [ ] Extract buffer size expressions
-- [ ] Extract `kernel.group_id(N)`
-- [ ] Extract `bo.write(...)`
-- [ ] Extract `bo.read(...)`
-- [ ] Extract `bo.sync(XCL_BO_SYNC_BO_TO_DEVICE)`
-- [ ] Extract `bo.sync(XCL_BO_SYNC_BO_FROM_DEVICE)`
-- [ ] Extract kernel invocation argument order
-- [ ] Extract `run.wait()`
-- [ ] Add structured output to ApplicationIR
-- [ ] Test on `cases/light_ddr`
-
-Expected structured result example:
-
-```json
-{
-  "buffers": [
-    {
-      "name": "bo_in1",
-      "size_expr": "n * sizeof(int)",
-      "group_id": 0,
-      "sync_direction": "host_to_device"
-    }
-  ],
-  "kernel_invocations": [
-    {
-      "kernel": "vadd",
-      "args": ["bo_in1", "bo_in2", "bo_out", "n"]
-    }
-  ]
-}
-```
-
-### Phase 3 — ApplicationIR v1
-
-Status: planned.
-
-- [ ] Split ApplicationIR into `facts`, `llm_annotations`, and `unknowns`
-- [ ] Keep scanner facts separate from LLM semantic hints
-- [ ] Add schema validation
-- [ ] Add unknown-field reporting
-- [ ] Update L0 checker to reject unsafe generated facts
-- [ ] Update CLI output
-
-### Phase 4 — case.yaml and Case Registry
-
-Status: in progress.
-
-- [x] Add `cases/light_ddr/case.yaml`
-- [x] Add case metadata
-- [x] Add source runtime
-- [x] Add memory type
-- [x] Add validation targets
-- [x] Add golden/test command fields
-- [x] Update scanner to read case.yaml
-
-### Phase 5 — Platform Pack v1
-
-Status: in progress.
-
-Replace single JSON stub with versioned platform pack directory.
-
-Target structure:
-
-```text
-platform_packs/v80_aved_2025_1_stub/
-  platform.json
-  capabilities.json
-  memory_rules.json
-  qdma_rules.json
-  register_rules.json
-  templates/
-    hls/
-    bd_tcl/
-    qdma_host/
-    build/
-```
-
-Checklist:
-
-- [x] Move platform stub into platform pack
-- [x] Add capabilities file
-- [x] Add memory rules
-- [x] Add QDMA rules
-- [x] Add register rules
-- [x] Add template metadata
-- [x] Update PlatformIR loader
-
-### Phase 6 — MigrationContract v1
-
-Status: in progress.
-
-- [x] Add contract states: Proposed, StaticallyChecked, RuntimeValidated
-- [x] Add FunctionalContract
-- [x] Add InterfaceContract
-- [x] Add MemoryContract
-- [x] Add ControlContract
-- [x] Add BuildContract
-- [x] Add ValidationContract
-- [x] Keep ExecutionPolicy separate from MigrationContract
-- [ ] Allow Generator to read only StaticallyChecked contracts
-
-### Phase 7 — L0-pre and L0-post
-
-Status: in progress.
-
-- [x] Split current L0 checker into L0-pre and L0-post
-- [x] L0-pre checks source project, ApplicationIR, case metadata and MigrationContract
-- [x] L0-post checks generated project and forbidden XRT API/artifact leftovers
-- [x] Add JSON reports for both stages
-
-### Phase 8 — Generator Stub
-
-Status: in progress.
-
-- [x] Add HLS IP generator stub
-- [ ] Add register map generator stub
-- [ ] Add address map generator stub
-- [x] Add QDMA host generator stub
-- [x] Add BD/Tcl generator stub
-- [x] Add build script generator stub
-- [x] Generate light_ddr target skeleton
-
-### Phase 9 — Evidence System
-
-Status: in progress.
-
-- [x] Add Artifact Registry
-- [ ] Add Patch Ledger
-- [x] Add Budget Ledger
-- [ ] Add Replay command
-- [ ] Record model calls, token usage, tool calls, patches, validation results and wall time
-
-### Phase 10 — Knowledge Pack
-
-Status: planned.
-
-Start with local Markdown/JSON knowledge pack, not a large vector database.
-
-- [ ] Add `xporthls/knowledge/rules/xrt_api_rules.json`
-- [ ] Add `xporthls/knowledge/rules/qdma_rules.json`
-- [ ] Add `xporthls/knowledge/rules/memory_rules.json`
-- [ ] Add `xporthls/knowledge/rules/register_rules.json`
-- [ ] Add `xporthls/knowledge/rules/failure_taxonomy.json`
-- [ ] Add version metadata to each rule
-- [ ] Add source URL and verification status
-- [ ] Add simple keyword search before vector search
-
-### Phase 11 — Agent Loop
-
-Status: planned.
-
-- [ ] Add ModelAdapter
-- [ ] Add LogParser
-- [ ] Add Diagnoser
-- [ ] Add PatchPlanner
-- [ ] Add PatchController
-- [ ] Add rollback support
-- [ ] Add validation-after-patch policy
-- [ ] Add fixed Failure Taxonomy
-
-### Phase 12 — Real Cases
-
-Status: planned.
-
-- [ ] Add HiSparse original XRT/U280 case
-- [ ] Add HiSparse manually migrated V80/AVED case
-- [ ] Extract diff and migration trajectory
-- [ ] Add one public light DDR case
-- [ ] Add one public medium HBM or multi-kernel case
-- [ ] Add fault injection tasks
-
----
-
-## 6. Current Immediate Next Step
-
-The next implementation task is:
-
-```text
-XRT Semantic Extractor v1
-```
-
-This is the foundation for QDMA host generation, register mapping, memory contract generation and later Agent repair.
-
-Do not start with a large vector database or LLM integration first.
-
-Correct order:
-
-```text
-XRT semantics
-  ↓
-ApplicationIR v1
-  ↓
 case.yaml
-  ↓
-L0-pre
-  ↓
-Platform Pack v1
-  ↓
-Generator stub
-  ↓
-Evidence system
-  ↓
-Agent loop
+  -> ApplicationIR
+  -> Platform Pack
+  -> MigrationContract v1
+  -> ExecutionPolicy v1
+  -> L0-pre
+  -> StaticallyChecked contract
+  -> generated target scaffold
+  -> L0-post
+  -> Artifact Registry / Budget Ledger / Replay Manifest
 ```
 
----
+The current implementation does **not** claim to fully migrate large real-world projects such as multi-kernel HBM designs yet. Repositories with HiSparse-like structure require repository census, build/connectivity extraction, HLS interface extraction, and source-platform profiling before full migration can be attempted.
 
-## 7. GitHub Backup
+## What works today
 
-Repository name:
+- Scan a small XRT/Vitis HLS project fixture.
+- Extract basic XRT host facts:
+  - `xrt::device`
+  - `xrt::kernel`
+  - `xrt::bo`
+  - `kernel.group_id`
+  - buffer allocation
+  - `bo.write`
+  - `bo.read`
+  - `bo.sync`
+  - kernel invocation
+  - `run.wait`
+- Build `ApplicationIR`.
+- Load a versioned target Platform Pack.
+- Build `MigrationContract v1`.
+- Build `ExecutionPolicy v1`.
+- Run L0-pre validation before generation.
+- Promote a contract from `Proposed` to `StaticallyChecked`.
+- Generate a deterministic target scaffold.
+- Run L0-post validation on the generated project.
+- Record artifacts, file hashes, tool calls, wall time, and replay commands.
+
+## What is not implemented yet
+
+- Full migration of real XRT Alveo applications.
+- Real AVED/QDMA host generation.
+- Real register map and address map generation.
+- Full Vivado block design generation.
+- Vitis build/connectivity parsing for complex projects.
+- Multi-kernel and kernel-to-kernel stream migration.
+- HBM bank mapping migration.
+- C simulation, co-simulation, synthesis, implementation, or hardware validation.
+- Model-driven diagnosis or repair.
+
+## Target platform
+
+Current target:
 
 ```text
-XPortHLS
+Board:      AMD Alveo V80
+Flow:       AVED-native target scaffold
+Tools:      Vivado/Vitis 2025.1
+Pack:       platform_packs/v80_aved_2025_1_stub
+Status:     stub pack; rule files exist but hardware-specific rules still require verification
 ```
 
-Recommended branch:
+Target-platform information is kept in a Platform Pack rather than hard-coded into the pipeline.
+
+## Source projects
+
+Current source assumption:
 
 ```text
-main
+Runtime:    XRT
+Flow:       Vitis acceleration projects
+Boards:     U280 / U50 / U55C / U200-class Alveo projects and similar XRT-based designs
 ```
 
-Do not commit:
+The current fixture is intentionally small. Real repositories should first be profiled before they are treated as migration candidates.
 
-- `.env`
-- real API keys
-- Vivado build directories
-- generated `.pdi`, `.bit`, `.xclbin`, `.xo`
-- huge logs
-- AMD/Xilinx binary packages
-- EULA-restricted files
+## Repository layout
+
+```text
+cases/
+  light_ddr/
+    case.yaml
+    src/
+    tests/
+
+platform_packs/
+  v80_aved_2025_1_stub/
+    platform.json
+    capabilities.json
+    memory_rules.json
+    qdma_rules.json
+    register_rules.json
+    templates/
+
+xporthls/
+  cases/
+  contracts/
+  evidence/
+  generators/
+  ir/
+  platforms/
+  scanner/
+  validators/
+
+experiments/
+  runs -> /mnt/data/xporthls_runs
+```
+
+## Requirements
+
+Minimum development environment:
+
+- Linux
+- Python 3.10+
+- Git
+- AMD/Xilinx tools installed separately if running hardware-tool stages later
+
+The current L0 pipeline does not require running Vivado or Vitis. Later stages will require the installed AMD/Xilinx toolchain.
+
+On the current development server the expected tools are:
+
+```text
+Vivado: /opt/Xilinx/2025.1/Vivado/bin/vivado
+Vitis:  /opt/Xilinx/2025.1/Vitis/bin/vitis
+HLS:    /opt/Xilinx/2025.1/Vitis/bin/vitis_hls
+```
+
+## Quick start
+
+Clone the repository and enter it:
+
+```bash
+git clone git@github.com:UTZZTU/XPortHLS.git
+cd XPortHLS
+```
+
+Run the current evidenced pipeline:
+
+```bash
+./add_evidence_system_v010_replay.sh
+```
+
+Expected result:
+
+```text
+Evidence validation: pass
+Missing artifacts: 0
+Tool calls: 7
+Failed tool calls: 0
+LLM calls: 0
+L0-post status: pass
+L0-post issues: 0
+```
+
+## Manual pipeline commands
+
+### 1. Scan the fixture
+
+```bash
+python3 -m xporthls.cli scan \
+  --case cases/light_ddr \
+  --out experiments/runs/light_ddr_application_ir.json
+```
+
+### 2. Validate the target Platform Pack
+
+```bash
+python3 -m xporthls.platforms.platform_pack \
+  --pack platform_packs/v80_aved_2025_1_stub \
+  --out experiments/runs/v80_aved_2025_1_platform_pack_report.json
+```
+
+### 3. Build MigrationContract v1 and ExecutionPolicy v1
+
+```bash
+python3 -m xporthls.contracts.build_contract_v1 \
+  --app-ir experiments/runs/light_ddr_application_ir.json \
+  --platform platform_packs/v80_aved_2025_1_stub \
+  --out experiments/runs/light_ddr_migration_contract_proposed.json \
+  --policy-out experiments/runs/light_ddr_execution_policy.json
+```
+
+### 4. Validate the contract
+
+```bash
+python3 -m xporthls.contracts.validate_contract_v1 \
+  --contract experiments/runs/light_ddr_migration_contract_proposed.json \
+  --policy experiments/runs/light_ddr_execution_policy.json \
+  --out experiments/runs/light_ddr_contract_v1_report.json
+```
+
+### 5. Run L0-pre
+
+```bash
+python3 -m xporthls.validators.run_l0 \
+  --stage pre \
+  --app-ir experiments/runs/light_ddr_application_ir.json \
+  --contract experiments/runs/light_ddr_migration_contract_proposed.json \
+  --out experiments/runs/light_ddr_l0_pre_report.json
+```
+
+### 6. Promote the contract
+
+```bash
+python3 -m xporthls.contracts.promote_contract_v1 \
+  --contract experiments/runs/light_ddr_migration_contract_proposed.json \
+  --l0-report experiments/runs/light_ddr_l0_pre_report.json \
+  --out experiments/runs/light_ddr_migration_contract_static.json
+```
+
+### 7. Generate a target scaffold
+
+```bash
+python3 -m xporthls.generators.stub_generator \
+  --app-ir experiments/runs/light_ddr_application_ir.json \
+  --contract experiments/runs/light_ddr_migration_contract_static.json \
+  --policy experiments/runs/light_ddr_execution_policy.json \
+  --platform platform_packs/v80_aved_2025_1_stub \
+  --out-dir experiments/runs/light_ddr_generated \
+  --clean
+```
+
+### 8. Run L0-post
+
+```bash
+python3 -m xporthls.validators.run_l0 \
+  --stage post \
+  --project experiments/runs/light_ddr_generated \
+  --contract experiments/runs/light_ddr_migration_contract_static.json \
+  --out experiments/runs/light_ddr_l0_post_report.json
+```
+
+## Generated scaffold
+
+The current generator creates a deterministic scaffold:
+
+```text
+experiments/runs/light_ddr_generated/
+  README.md
+  xporthls_generated_manifest.json
+  hls/
+  host/
+  bd_tcl/
+  build/
+```
+
+The generated host scaffold is checked to avoid source-runtime residue such as XRT object use or `.xclbin` loading.
+
+## Evidence files
+
+The evidenced pipeline records:
+
+```text
+experiments/runs/light_ddr_artifact_registry_v010.json
+experiments/runs/light_ddr_budget_ledger_v010.json
+experiments/runs/light_ddr_replay_manifest_v010.json
+experiments/runs/light_ddr_evidence_report_v010.json
+```
+
+These files are runtime outputs and should not normally be committed.
+
+## Design principles
+
+- Facts are extracted by deterministic code.
+- Platform information comes from versioned Platform Packs.
+- Migration obligations are represented as contracts.
+- Generation is allowed only after L0-pre validation.
+- Generated output must pass L0-post validation.
+- Evidence is recorded for every run.
+- Model calls are disabled in the current pipeline.
+- A model may assist diagnosis or repair later, but it must not be the source of truth.
+
+## Version checkpoints
+
+```text
+v0.0.1   Project scaffold
+v0.0.2   light_ddr fixture and initial L0
+v0.0.3   XRT semantic extractor v1
+v0.0.4   ApplicationIR v1
+v0.0.5   case.yaml and case metadata
+v0.0.6   L0-pre / L0-post split
+v0.0.7   Platform Pack v1
+v0.0.8   MigrationContract v1 and ExecutionPolicy v1
+v0.0.9   Generator stub and L0-post generation loop
+v0.0.10  Artifact Registry, Budget Ledger, Replay Manifest
+```
+
+## External references
+
+- AVED documentation: https://xilinx.github.io/AVED/
+- AVED historical repository: https://github.com/Xilinx/AVED
+- HiSparse reference repository: https://github.com/cornell-zhang/HiSparse
+
+## Development notes
+
+The current repository is best treated as a migration framework prototype, not a production AVED generator. The next useful engineering step is to add real-repository profiling so that complex XRT/Vitis projects can be analyzed before migration logic is expanded.
