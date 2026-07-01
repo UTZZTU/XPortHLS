@@ -1,619 +1,646 @@
 # XPortHLS
 
-XPortHLS is an engineering migration framework for moving XRT/Vitis HLS accelerator projects toward an AVED-native project structure.
+**Version-aware XRT->AVED engineering migration agent**
 
-The current target is AMD Alveo V80 with AVED and Vivado/Vitis 2025.1. Source projects are expected to come from XRT-based Alveo platforms such as U280, U50, U55C, U200-class designs, and similar Vitis acceleration projects.
+XPortHLS is an engineering migration framework for converting **XRT-based Alveo HLS applications** into **native AVED projects**, with the current target deployment board being **AMD Alveo V80**.
 
-The project is intentionally built as a compiler-like pipeline: facts are extracted deterministically, normalized into IR, checked against contracts, generated into a target scaffold, and recorded with reproducible evidence. Model-assisted repair can be added later through a bounded adapter layer, but correctness is always decided by contracts, validators, tool reports, and tests.
+The project is not a free-form code generator. It is designed as a **compiler-like migration pipeline** controlled by structured IR, contracts, validators, guards, evidence logs, and budget ledgers.
 
-## Current status
+## Correct terminology
 
-XPortHLS is currently an early-stage migration framework. It can run a complete deterministic pipeline on the included `light_ddr` fixture:
+XPortHLS uses the following terminology.
+
+| Term | Meaning in this project |
+|---|---|
+| XRT | Source-side runtime / host API ecosystem used by existing Alveo applications. |
+| AVED | Target-side engineering / runtime ecosystem for the generated native project. |
+| V80 | Current target deployment board. V80 is hardware, not the runtime ecosystem. |
+| Vivado | Target-side implementation and integration tool for BD, synthesis, implementation, address assignment, PDI generation, and board deployment flow. |
+| Vivado HLS / Vitis HLS | HLS toolchain components used to generate RTL/IP from C/C++ HLS code. They are toolchain facts, not the migration endpoint. |
+| QDMA | Target-side host-to-card data movement path used in the current AVED/V80 reference flow. |
+| AXI-Lite | Target-side control/register interface for HLS IP control. |
+| HBM/PC | Target-side high-bandwidth memory and pseudo-channel address model. |
+| TargetReferenceIR | A future structured representation of a known-good AVED/V80 target reference project. |
+| VectorKB | External plug-in vector knowledge base. It provides retrievable knowledge, not authoritative correctness decisions. |
+
+The migration direction is:
 
 ```text
-case.yaml
+XRT-based Alveo HLS application
+        ->
+Native AVED project
+Current deployment board: V80
+```
+
+Do **not** describe the project as "Vitis HLS -> AVED" or "V80 -> AVED". These are different layers.
+
+## Core research principle
+
+XPortHLS follows this principle:
+
+```text
+Extract general migration rules from HiSparse,
+then validate whether those rules generalize on a second and third XRT->AVED case.
+```
+
+HiSparse is the first complex main case, not the whole project. Case-specific evidence belongs in case configuration, target reference data, and experiment artifacts. Core extractors, resolvers, validators, and guards should remain general whenever possible.
+
+## Project scope
+
+### In scope
+
+XPortHLS targets application-level migration from source XRT projects to a native AVED/V80 flow:
+
+- Source repository census.
+- Source runtime profiling.
+- Source build and connectivity extraction.
+- HLS interface extraction.
+- Multi-kernel ApplicationIR construction.
+- Source-to-target gap contract generation.
+- Contract-gated generation blocking.
+- Resolver planning.
+- Deterministic gap resolution.
+- Contract patch proposal and patch application.
+- Evidence, trace, budget, and artifact ledgers.
+- ModelAdapter / LLM boundary infrastructure.
+- Target reference intake for known-good AVED/V80 projects.
+- Future external VectorKB integration.
+
+### Out of scope for the current stage
+
+The current stage does **not** claim:
+
+- Arbitrary XRT project one-click migration.
+- Real AVED project generation.
+- Real model-driven patching.
+- Real LLM correctness judgment.
+- Real board-level auto deployment.
+- General DDR<->HBM conversion.
+- Zynq/Versal-to-Alveo migration.
+- Cross-vendor FPGA migration.
+- PPA-optimal generation.
+
+Correct migration comes first. Performance tuning comes after correctness.
+
+## Why V80/AVED target reference matters
+
+V80/AVED target-side projects do not use the old XRT flow directly. The source-side abstractions such as:
+
+```text
+xclbin
+xrt::device
+xrt::kernel
+xrt::bo
+group_id
+run.start()
+run.wait()
+```
+
+must be expanded into target-side engineering artifacts such as:
+
+```text
+Vivado/AVED project templates
+BD/Tcl connections
+AXI-Lite register maps
+QDMA host transfers
+HBM/PC address spaces
+HLS IP packaging
+PDI build and deployment flow
+```
+
+Manual migration steps such as copying AVED templates, changing Tcl, connecting BD ports, and assigning address spaces are not "miscellaneous manual work". They are first-class migration knowledge that XPortHLS must eventually learn, encode, validate, and replay.
+
+## HiSparse and SPMV-on-V80
+
+The source-side main case is HiSparse:
+
+```text
+HiSparse source:
+  Alveo U280
+  XRT runtime
+  HBM-heavy multi-kernel SpMV application
+```
+
+The target-side reference is the uploaded / external SPMV-on-V80 project:
+
+```text
+SPMV-on-V80 target reference:
+  Native AVED/V80 engineering flow
+  Vivado/AVED BD/Tcl project structure
+  HLS IP packaging
+  QDMA host runtime
+  AXI-Lite control
+  HBM/PC address mapping
+  known-correct target-side execution evidence
+```
+
+SPMV-on-V80 should be treated as a **Target Reference / Golden Reference**, not merely as a manually modified copy. It is expected to become the first input to `TargetReferenceIR`.
+
+## TargetReferenceIR roadmap
+
+The next major project step is not direct AVED generation. The next step is to ingest the known-good AVED/V80 target reference project.
+
+Planned `TargetReferenceIR v1` fields include:
+
+```text
+repository_summary
+documentation_index
+host_runtime_pattern
+vivado_aved_project_pattern
+bd_tcl_pattern
+hls_ip_packaging_pattern
+axi_lite_register_pattern
+qdma_transfer_pattern
+hbm_pc_address_map
+stream_connection_pattern
+manual_operation_trace
+known_correctness_fixes
+optimization_notes
+```
+
+The purpose is to convert target-side engineering knowledge into machine-readable migration evidence.
+
+## Shuffler changes are correctness fixes
+
+Some changes in the V80/AVED target reference are not performance optimizations. In particular, shuffler-related changes caused by toolchain/platform version behavior should be classified as:
+
+```text
+F_VERSION_CORRECTNESS
+```
+
+Meaning:
+
+```text
+A version-induced correctness fix required because the same algorithm or structure fails to build, synthesize, or run correctly under the new toolchain/platform semantics, HLS dependency behavior, stream arbitration behavior, or interface constraints.
+```
+
+This is different from later optimization categories such as CDC cleanup, timing closure, QoR tuning, aggressive HBM scaling, or PPA search.
+
+## Architecture
+
+XPortHLS is organized as:
+
+```text
+Case
+  -> Source extractors
   -> ApplicationIR
   -> Platform Pack
-  -> MigrationContract v1
-  -> ExecutionPolicy v1
-  -> L0-pre
-  -> StaticallyChecked contract
-  -> generated target scaffold
-  -> L0-post
-  -> Artifact Registry / Budget Ledger / Replay Manifest
+  -> Gap Contract
+  -> Resolver Plan
+  -> Deterministic Resolvers
+  -> Contract Patch Proposal
+  -> Patched Contract
+  -> Generator Guard
+  -> Future Target Generator
+  -> Validation and Evidence
 ```
 
-The current implementation does **not** claim to fully migrate large real-world projects such as multi-kernel HBM designs yet. Repositories with HiSparse-like structure require repository census, build/connectivity extraction, HLS interface extraction, and source-platform profiling before full migration can be attempted.
-
-## What works today
-
-- Scan a small XRT/Vitis HLS project fixture.
-- Extract basic XRT host facts:
-  - `xrt::device`
-  - `xrt::kernel`
-  - `xrt::bo`
-  - `kernel.group_id`
-  - buffer allocation
-  - `bo.write`
-  - `bo.read`
-  - `bo.sync`
-  - kernel invocation
-  - `run.wait`
-- Build `ApplicationIR`.
-- Load a versioned target Platform Pack.
-- Build `MigrationContract v1`.
-- Build `ExecutionPolicy v1`.
-- Run L0-pre validation before generation.
-- Promote a contract from `Proposed` to `StaticallyChecked`.
-- Generate a deterministic target scaffold.
-- Run L0-post validation on the generated project.
-- Record artifacts, file hashes, tool calls, wall time, and replay commands.
-
-## What is not implemented yet
-
-- Full migration of real XRT Alveo applications.
-- Real AVED/QDMA host generation.
-- Real register map and address map generation.
-- Full Vivado block design generation.
-- Vitis build/connectivity parsing for complex projects.
-- Multi-kernel and kernel-to-kernel stream migration.
-- HBM bank mapping migration.
-- C simulation, co-simulation, synthesis, implementation, or hardware validation.
-- Model-driven diagnosis or repair.
-
-## Target platform
-
-Current target:
+The LLM path is separate and controlled:
 
 ```text
-Board:      AMD Alveo V80
-Flow:       AVED-native target scaffold
-Tools:      Vivado/Vitis 2025.1
-Pack:       platform_packs/v80_aved_2025_1_stub
-Status:     stub pack; rule files exist but hardware-specific rules still require verification
+ModelAdapter
+  -> LLMRequest
+  -> LLMResponse
+  -> LLM Trace Ledger
+  -> LLM Budget Ledger
+  -> Validator
 ```
 
-Target-platform information is kept in a Platform Pack rather than hard-coded into the pipeline.
+The LLM is not allowed to become the source of truth.
 
-## Source projects
+## Trust boundary
 
-Current source assumption:
+The following components are authoritative:
 
 ```text
-Runtime:    XRT
-Flow:       Vitis acceleration projects
-Boards:     U280 / U50 / U55C / U200-class Alveo projects and similar XRT-based designs
+ApplicationIR facts
+Platform Pack
+MigrationContract / Gap Contract
+Validators
+Generator Guard
+Build logs
+Run logs
+Board PASS results
+Artifact Registry
+Patch Ledger
+Budget Ledger
 ```
 
-The current fixture is intentionally small. Real repositories should first be profiled before they are treated as migration candidates.
+The following components are non-authoritative:
+
+```text
+LLM output
+Mock LLM output
+VectorKB retrieval result
+Unverified documentation summary
+Unvalidated patch plan
+```
+
+LLM and VectorKB may help propose explanations or plans, but they do not decide whether a migration is correct.
+
+## External Vector Knowledge Base
+
+XPortHLS will support an external plug-in Vector Knowledge Base.
+
+The VectorKB should store and retrieve:
+
+```text
+AVED documentation
+V80 manuals
+Vivado/AVED project templates
+QDMA notes
+AXI-Lite register patterns
+HBM/PC mapping rules
+HLS IP packaging examples
+manual migration traces
+known failure signatures
+known correctness fixes
+build and run logs
+negative cases
+```
+
+Every retrieval must be traced.
+
+Every knowledge block should include metadata:
+
+```text
+source
+version
+toolchain
+board
+runtime/ecosystem
+file_type
+applicability
+verified_by
+negative_cases
+license_or_distribution_note
+```
+
+The VectorKB must not directly modify:
+
+```text
+facts
+contracts
+migration_allowed
+generator decisions
+validation results
+```
+
+Final correctness must still be decided by validators, contracts, guards, build logs, run logs, and board PASS evidence.
+
+## Current implemented status
+
+Latest implemented milestone:
+
+```text
+v0.0.23
+Add model adapter and LLM trace infrastructure
+```
+
+Current state:
+
+```text
+Real source case:
+  HiSparse U280/XRT/HBM profile-only case
+
+ApplicationIR:
+  application_ir.v2
+
+Initial gap contract:
+  14 gaps
+  7 initial blocking gaps
+
+Resolved:
+  GAP-KERNEL-NAME-001
+
+Remaining blocking gaps:
+  GAP-XRT-HOST-001
+  GAP-PLATFORM-001
+  GAP-MEM-HBM-001
+  GAP-STREAM-AXIS-001
+  GAP-PLACEMENT-SLR-001
+  GAP-HLS-INTERFACE-001
+
+Migration allowed:
+  false
+
+Generator:
+  blocked by guard
+
+LLM:
+  ModelAdapter installed
+  default backend disabled
+  real model not invoked
+  mock model not invoked
+```
+
+## Implemented milestones
+
+| Version | Milestone | Status |
+|---|---|---|
+| v0.0.1 | Initial scaffold | Complete |
+| v0.0.2 | Light DDR fixture and L0 checker | Complete |
+| v0.0.3 | XRT semantic extractor v1 | Complete |
+| v0.0.4 | ApplicationIR v1 trust-boundary schema | Complete |
+| v0.0.5 | case.yaml loader and case metadata | Complete |
+| v0.0.6 | L0-pre / L0-post split | Complete |
+| v0.0.7 | Versioned Platform Pack v1 | Complete |
+| v0.0.8 | MigrationContract v1 and ExecutionPolicy v1 | Complete |
+| v0.0.9 | Generator stub and L0-post generated project loop | Complete |
+| v0.0.10 | Evidence registry and budget ledger | Complete |
+| v0.0.11 | Real repo census and source platform profiler | Complete |
+| v0.0.12 | Source-side build/connectivity extractor | Complete |
+| v0.0.13 | HLS interface extractor v1 | Complete |
+| v0.0.14 | Multi-kernel ApplicationIR v2 | Complete |
+| v0.0.15 | HiSparse profile-only case pack | Complete |
+| v0.0.16 | Source-to-target gap contract | Complete |
+| v0.0.17 | Contract-gated generator guard | Complete |
+| v0.0.18 | Gap contract resolver plan | Complete |
+| v0.0.19 | Kernel name resolver v1 | Complete |
+| v0.0.20 | Kernel unresolved diagnosis | Complete |
+| v0.0.21 | Kernel alias table and resolver v2 | Complete |
+| v0.0.22 | Gap contract patch apply | Complete |
+| v0.0.23 | ModelAdapter and LLM trace infrastructure | Complete |
+
+Note on v0.0.12: the name "Vitis Build" refers to **source-side build/connectivity parsing** of the original XRT/Vitis-style project metadata. It does not imply that the target AVED/V80 board deployment uses a Vitis上板 flow.
+
+## Important implemented result
+
+XPortHLS has already completed the first full deterministic gap-resolution chain:
+
+```text
+Detect GAP-KERNEL-NAME-001
+  -> diagnose unresolved configured kernels
+  -> build alias table
+  -> resolve all configured kernels
+  -> generate contract update proposal
+  -> apply patched gap contract
+  -> remove GAP-KERNEL-NAME-001 from blocking list
+  -> keep migration_allowed=false
+  -> prove generator guard still blocks generation
+```
+
+Result:
+
+```text
+Original blocking gaps: 7
+Patched blocking gaps: 6
+Resolved: GAP-KERNEL-NAME-001
+Generator remains blocked: true
+```
+
+This proves the contract/resolver/patch/guard path works for at least one real blocking gap.
 
 ## Repository layout
 
+Typical repository layout:
+
 ```text
 cases/
-  light_ddr/
-    case.yaml
-    src/
-    tests/
+  hisparse_u280_profile/
 
 platform_packs/
   v80_aved_2025_1_stub/
-    platform.json
-    capabilities.json
-    memory_rules.json
-    qdma_rules.json
-    register_rules.json
-    templates/
 
 xporthls/
-  cases/
+  applications/
   contracts/
-  evidence/
   generators/
   ir/
-  platforms/
-  scanner/
-  validators/
+  llm/
+  realrepo/
+  targetref/        # planned for v0.0.24+
+  validation/
 
-experiments/
-  runs -> /mnt/data/xporthls_runs
+experiments/runs -> /mnt/data/xporthls_runs
 ```
 
-## Requirements
+`experiments/runs` is expected to point to external run artifacts and should not be committed as experiment output.
 
-Minimum development environment:
-
-- Linux
-- Python 3.10+
-- Git
-- AMD/Xilinx tools installed separately if running hardware-tool stages later
-
-The current L0 pipeline does not require running Vivado or Vitis. Later stages will require the installed AMD/Xilinx toolchain.
-
-On the current development server the expected tools are:
+## Current main case
 
 ```text
-Vivado: /opt/Xilinx/2025.1/Vivado/bin/vivado
-Vitis:  /opt/Xilinx/2025.1/Vitis/bin/vitis
-HLS:    /opt/Xilinx/2025.1/Vitis/bin/vitis_hls
+cases/hisparse_u280_profile
 ```
 
-## Quick start
-
-Clone the repository and enter it:
-
-```bash
-git clone git@github.com:UTZZTU/XPortHLS.git
-cd XPortHLS
-```
-
-Run the current evidenced pipeline:
-
-```bash
-./add_evidence_system_v010_replay.sh
-```
-
-Expected result:
+Current external source repository path:
 
 ```text
-Evidence validation: pass
-Missing artifacts: 0
-Tool calls: 7
-Failed tool calls: 0
-LLM calls: 0
-L0-post status: pass
-L0-post issues: 0
+/mnt/data/xporthls_benchmarks/HiSparse
 ```
 
-## Manual pipeline commands
-
-### 1. Scan the fixture
-
-```bash
-python3 -m xporthls.cli scan \
-  --case cases/light_ddr \
-  --out experiments/runs/light_ddr_application_ir.json
-```
-
-### 2. Validate the target Platform Pack
-
-```bash
-python3 -m xporthls.platforms.platform_pack \
-  --pack platform_packs/v80_aved_2025_1_stub \
-  --out experiments/runs/v80_aved_2025_1_platform_pack_report.json
-```
-
-### 3. Build MigrationContract v1 and ExecutionPolicy v1
-
-```bash
-python3 -m xporthls.contracts.build_contract_v1 \
-  --app-ir experiments/runs/light_ddr_application_ir.json \
-  --platform platform_packs/v80_aved_2025_1_stub \
-  --out experiments/runs/light_ddr_migration_contract_proposed.json \
-  --policy-out experiments/runs/light_ddr_execution_policy.json
-```
-
-### 4. Validate the contract
-
-```bash
-python3 -m xporthls.contracts.validate_contract_v1 \
-  --contract experiments/runs/light_ddr_migration_contract_proposed.json \
-  --policy experiments/runs/light_ddr_execution_policy.json \
-  --out experiments/runs/light_ddr_contract_v1_report.json
-```
-
-### 5. Run L0-pre
-
-```bash
-python3 -m xporthls.validators.run_l0 \
-  --stage pre \
-  --app-ir experiments/runs/light_ddr_application_ir.json \
-  --contract experiments/runs/light_ddr_migration_contract_proposed.json \
-  --out experiments/runs/light_ddr_l0_pre_report.json
-```
-
-### 6. Promote the contract
-
-```bash
-python3 -m xporthls.contracts.promote_contract_v1 \
-  --contract experiments/runs/light_ddr_migration_contract_proposed.json \
-  --l0-report experiments/runs/light_ddr_l0_pre_report.json \
-  --out experiments/runs/light_ddr_migration_contract_static.json
-```
-
-### 7. Generate a target scaffold
-
-```bash
-python3 -m xporthls.generators.stub_generator \
-  --app-ir experiments/runs/light_ddr_application_ir.json \
-  --contract experiments/runs/light_ddr_migration_contract_static.json \
-  --policy experiments/runs/light_ddr_execution_policy.json \
-  --platform platform_packs/v80_aved_2025_1_stub \
-  --out-dir experiments/runs/light_ddr_generated \
-  --clean
-```
-
-### 8. Run L0-post
-
-```bash
-python3 -m xporthls.validators.run_l0 \
-  --stage post \
-  --project experiments/runs/light_ddr_generated \
-  --contract experiments/runs/light_ddr_migration_contract_static.json \
-  --out experiments/runs/light_ddr_l0_post_report.json
-```
-
-## Generated scaffold
-
-The current generator creates a deterministic scaffold:
+Current target reference path should be external, for example:
 
 ```text
-experiments/runs/light_ddr_generated/
-  README.md
-  xporthls_generated_manifest.json
-  hls/
-  host/
-  bd_tcl/
-  build/
+/mnt/data/xporthls_target_refs/SPMV-on-V80-main
 ```
 
-The generated host scaffold is checked to avoid source-runtime residue such as XRT object use or `.xclbin` loading.
+Do not commit large external benchmark or target reference repositories unless explicitly intended and license-approved.
 
-## Evidence files
+## Common replay scripts
 
-The evidenced pipeline records:
+Previously generated replay scripts include:
 
 ```text
-experiments/runs/light_ddr_artifact_registry_v010.json
-experiments/runs/light_ddr_budget_ledger_v010.json
-experiments/runs/light_ddr_replay_manifest_v010.json
-experiments/runs/light_ddr_evidence_report_v010.json
+add_kernel_alias_resolution_v021_replay.sh
+add_gap_contract_patch_v022_replay.sh
+add_model_adapter_v023_replay.sh
 ```
-
-These files are runtime outputs and should not normally be committed.
-
-## Design principles
-
-- Facts are extracted by deterministic code.
-- Platform information comes from versioned Platform Packs.
-- Migration obligations are represented as contracts.
-- Generation is allowed only after L0-pre validation.
-- Generated output must pass L0-post validation.
-- Evidence is recorded for every run.
-- Model calls are disabled in the current pipeline.
-- A model may assist diagnosis or repair later, but it must not be the source of truth.
-
-## Version checkpoints
-
-```text
-v0.0.1   Project scaffold
-v0.0.2   light_ddr fixture and initial L0
-v0.0.3   XRT semantic extractor v1
-v0.0.4   ApplicationIR v1
-v0.0.5   case.yaml and case metadata
-v0.0.6   L0-pre / L0-post split
-v0.0.7   Platform Pack v1
-v0.0.8   MigrationContract v1 and ExecutionPolicy v1
-v0.0.9   Generator stub and L0-post generation loop
-v0.0.10  Artifact Registry, Budget Ledger, Replay Manifest
-```
-
-## External references
-
-- AVED documentation: https://xilinx.github.io/AVED/
-- AVED historical repository: https://github.com/Xilinx/AVED
-- HiSparse reference repository: https://github.com/cornell-zhang/HiSparse
-
-## Development notes
-
-The current repository is best treated as a migration framework prototype, not a production AVED generator. The next useful engineering step is to add real-repository profiling so that complex XRT/Vitis projects can be analyzed before migration logic is expanded.
-
-## Real repository profiling
-
-XPortHLS can profile a real XRT/Vitis repository before attempting migration. This is used to identify source platforms, build files, XRT usage, HLS kernels, memory topology hints, connectivity files, and unsupported features.
 
 Example:
 
 ```bash
-python3 -m xporthls.realrepo.run_realrepo_profile_v011 \
-  --repo /mnt/data/xporthls_benchmarks/HiSparse \
-  --case-id hisparse \
-  --target-platform v80_aved_2025_1_stub \
-  --target-ecosystem AVED
+cd /home/wwb/XPortHLS
+./add_model_adapter_v023_replay.sh
 ```
 
-The profiler writes:
+Expected v0.0.23 safety result:
 
 ```text
-experiments/runs/hisparse_repo_census_v011.json
-experiments/runs/hisparse_source_platform_profile_v011.json
-experiments/runs/hisparse_compatibility_profile_v011.json
-experiments/runs/hisparse_realrepo_profile_report_v011.json
+LLM enabled: False
+Default backend: disabled
+Request status: blocked_by_policy
+Request executed: False
+Real model invoked: False
+Mock model invoked: False
+Budget executed requests: 0
+Spent USD: 0.0
+Guard blocked: True
+Validation status: pass
 ```
 
-The profiler is analysis-only. It does not generate an AVED project.
+## Do not commit run artifacts
 
-## Build and connectivity extraction
-
-XPortHLS can extract build and connectivity facts from a real Vitis/XRT repository. This produces a BuildIR and ConnectivityIR used by later migration stages.
-
-Example:
-
-```bash
-python3 -m xporthls.realrepo.run_build_connectivity_v012 \
-  --repo /mnt/data/xporthls_benchmarks/HiSparse \
-  --case-id hisparse
-```
-
-The extractor writes:
+Do not commit files like:
 
 ```text
-experiments/runs/hisparse_build_ir_v012.json
-experiments/runs/hisparse_connectivity_ir_v012.json
-experiments/runs/hisparse_build_connectivity_report_v012.json
+experiments/runs/*.json
+experiments/runs/hisparse_*_v011.json
+experiments/runs/hisparse_*_v012.json
+experiments/runs/hisparse_*_v013.json
+experiments/runs/hisparse_*_v014.json
+experiments/runs/hisparse_u280_profile_*_v015.json
+experiments/runs/hisparse_u280_profile_*_v016.json
+experiments/runs/hisparse_u280_profile_*_v017.json
+experiments/runs/hisparse_u280_profile_*_v018.json
+experiments/runs/hisparse_u280_profile_*_v019.json
+experiments/runs/hisparse_u280_profile_*_v020.json
+experiments/runs/hisparse_u280_profile_*_v021.json
+experiments/runs/hisparse_u280_profile_*_v022.json
+experiments/runs/hisparse_u280_profile_*_v023.json
+/mnt/data/xporthls_benchmarks/HiSparse
+/mnt/data/xporthls_target_refs/SPMV-on-V80-main
 ```
 
-The extractor is analysis-only. It does not generate an AVED project.
+Commit source code, validators, runners, replay scripts, README updates, schema files, and small case metadata only.
 
-## HLS interface extraction
+## Suggested next milestone
 
-XPortHLS can extract HLS kernel interface facts from a real Vitis/XRT repository. This produces an HLS Interface IR with kernel candidates, function arguments, HLS pragmas, interface ports, stream usage, and include dependencies.
-
-Example:
-
-```bash
-python3 -m xporthls.realrepo.run_hls_interface_v013 \
-  --repo /mnt/data/xporthls_benchmarks/HiSparse \
-  --case-id hisparse \
-  --build-ir experiments/runs/hisparse_build_ir_v012.json \
-  --connectivity-ir experiments/runs/hisparse_connectivity_ir_v012.json
-```
-
-The extractor writes:
+The next milestone should be:
 
 ```text
-experiments/runs/hisparse_hls_interface_ir_v013.json
-experiments/runs/hisparse_hls_interface_report_v013.json
+v0.0.24
+XRT->AVED Terminology Normalization + Target Reference Intake
 ```
 
-The extractor is analysis-only. It does not generate an AVED project.
-
-## Multi-kernel ApplicationIR v2
-
-XPortHLS can merge real-repository facts into a multi-kernel ApplicationIR v2. This IR combines repository census data, source platform profile, build facts, connectivity facts, HLS interfaces, memory topology, stream edges, and kernel graph alignment.
-
-Example:
-
-```bash
-python3 -m xporthls.realrepo.run_application_ir_v2_v014 \
-  --case-id hisparse \
-  --target-platform v80_aved_2025_1_stub \
-  --target-ecosystem AVED \
-  --census experiments/runs/hisparse_repo_census_v011.json \
-  --source-profile experiments/runs/hisparse_source_platform_profile_v011.json \
-  --build-ir experiments/runs/hisparse_build_ir_v012.json \
-  --connectivity-ir experiments/runs/hisparse_connectivity_ir_v012.json \
-  --hls-ir experiments/runs/hisparse_hls_interface_ir_v013.json \
-  --compatibility-profile experiments/runs/hisparse_compatibility_profile_v011.json
-```
-
-The builder writes:
+Scope:
 
 ```text
-experiments/runs/hisparse_application_ir_v2_v014.json
-experiments/runs/hisparse_application_ir_v2_report_v014.json
+1. Normalize README, comments, schemas, and report language to XRT->AVED.
+2. Add xporthls/targetref/.
+3. Add TargetReferenceIR v1 schema.
+4. Add SPMV-on-V80 target reference census.
+5. Extract documentation, host runtime, Vivado/AVED BD/Tcl, HLS IP packaging, QDMA, AXI-Lite, HBM/PC, stream patterns, and manual operation traces.
+6. Classify shuffler changes as F_VERSION_CORRECTNESS, not optimization.
+7. Produce validation report.
+8. Do not modify gap contract.
+9. Do not unlock generator.
+10. Do not call real LLM.
 ```
 
-ApplicationIR v2 is analysis-only at this stage. It does not generate an AVED project.
-
-## HiSparse profile-only case
-
-XPortHLS includes a profile-only case for the HiSparse U280 repository. This case runs the real-repository profiling pipeline and validates that the expected source profile, build facts, connectivity facts, HLS interface facts, ApplicationIR v2, and known gaps remain stable.
-
-Example:
-
-```bash
-python3 -m xporthls.realrepo.run_profile_case_v015 \
-  --case-dir cases/hisparse_u280_profile \
-  --out-dir experiments/runs
-
-python3 -m xporthls.realrepo.validate_profile_case_v015 \
-  --case-dir cases/hisparse_u280_profile \
-  --case-run-report experiments/runs/hisparse_u280_profile_case_run_report_v015.json \
-  --out experiments/runs/hisparse_u280_profile_case_validation_v015.json
-```
-
-By default, the case runner reuses the local HiSparse checkout and skips `git pull` to avoid unnecessary network delays. Set `XPORT_HISPARSE_SKIP_PULL=0` to refresh the checkout.
-
-The case is analysis-only. It does not generate an AVED project.
-
-## Source-to-target gap contract
-
-XPortHLS can convert ApplicationIR v2 gaps into a deterministic source-to-target gap contract. The contract decides whether target generation is allowed and records blocking gaps, warnings, evidence, and required next capabilities.
-
-Example:
-
-```bash
-python3 -m xporthls.realrepo.run_gap_contract_v016 \
-  --case-id hisparse_u280_profile \
-  --app-ir experiments/runs/hisparse_application_ir_v2_v014.json \
-  --expected-gaps cases/hisparse_u280_profile/expected_gaps.json \
-  --platform-pack platform_packs/v80_aved_2025_1_stub \
-  --out-dir experiments/runs
-```
-
-The builder writes:
+Proposed v0.0.24 outputs:
 
 ```text
-experiments/runs/hisparse_u280_profile_gap_contract_v016.json
-experiments/runs/hisparse_u280_profile_gap_contract_report_v016.json
+experiments/runs/spmv_on_v80_target_reference_ir_v024.json
+experiments/runs/spmv_on_v80_target_reference_report_v024.json
+experiments/runs/spmv_on_v80_target_reference_validation_v024.json
 ```
 
-The contract is deterministic and profile-only at this stage. It does not generate an AVED project.
-
-## Contract-gated generator guard
-
-XPortHLS prevents target generation when the source-to-target gap contract blocks migration. A generator wrapper must read the gap contract before creating target output.
-
-Example:
-
-```bash
-python3 -m xporthls.generators.run_guarded_stub_generation_v017 \
-  --contract experiments/runs/hisparse_u280_profile_gap_contract_v016.json \
-  --case-id hisparse_u280_profile \
-  --expect-blocked \
-  --dry-run
-```
-
-For the HiSparse profile-only case, generation is expected to be blocked because the contract contains blocking gaps such as XRT host rewrite, U280-to-V80 platform mapping, HBM memory topology mapping, AXIS/K2K stream mapping, SLR placement, kernel-name resolution, and HLS interface lowering.
-
-## Gap resolver plan
-
-XPortHLS can turn a blocked source-to-target gap contract into a deterministic resolver plan. The plan does not execute resolvers and does not mark any gap as resolved. It records the required inputs, output schemas, ordered steps, dependency graph, success criteria, and state-transition policy for each gap.
-
-Example:
-
-```bash
-python3 -m xporthls.realrepo.run_gap_resolver_plan_v018 \
-  --case-id hisparse_u280_profile \
-  --contract experiments/runs/hisparse_u280_profile_gap_contract_v016.json \
-  --out-dir experiments/runs
-```
-
-The runner writes:
+## Revised near-term roadmap
 
 ```text
-experiments/runs/hisparse_u280_profile_gap_resolver_plan_v018.json
-experiments/runs/hisparse_u280_profile_gap_resolver_plan_report_v018.json
+v0.0.24  XRT->AVED Terminology Normalization + Target Reference Intake
+v0.0.25  TargetReferenceIR Extractor for SPMV-on-V80
+v0.0.26  Source-Target Pattern Pairing v1
+v0.0.27  AVED Host Runtime Pattern Resolver v1
+v0.0.28  HBM/PC Memory Mapping Resolver v1
+v0.0.29  AVED Stream Graph Resolver v1
+v0.0.30  VectorKB Adapter v1
+v0.0.31  Mock LLM Read-only Diagnosis using TargetReference + VectorKB
 ```
 
-For the HiSparse profile-only case, the resolver plan is expected to remain profile-only and generation-blocked.
+The exact order of host, memory, and stream resolvers may change after TargetReferenceIR evidence is extracted.
 
-## Kernel name resolver
+## Correctness-first validation ladder
 
-XPortHLS includes a deterministic Kernel Name Resolver for the first blocking resolver in the HiSparse gap resolver plan. It maps configured kernels and compute units from connectivity/build facts to declared HLS functions from ApplicationIR v2.
-
-Example:
-
-```bash
-python3 -m xporthls.realrepo.run_kernel_name_resolution_v019 \
-  --case-id hisparse_u280_profile \
-  --app-ir experiments/runs/hisparse_application_ir_v2_v014.json \
-  --gap-contract experiments/runs/hisparse_u280_profile_gap_contract_v016.json \
-  --resolver-plan experiments/runs/hisparse_u280_profile_gap_resolver_plan_v018.json \
-  --out-dir experiments/runs
-```
-
-The resolver writes:
+XPortHLS should keep the validation ladder:
 
 ```text
-experiments/runs/hisparse_u280_profile_kernel_name_resolution_report_v019.json
-experiments/runs/hisparse_u280_profile_kernel_name_resolution_validation_v019.json
+L0-pre   input/schema/contract checks
+L0-post  generated project static checks
+L1       software reference / CPU golden
+L2       HLS C simulation
+L3       HLS synthesis
+L4       Vivado/AVED BD/interface/build validation
+L5       V80 board run
 ```
 
-The v0.0.19 resolver is deterministic and profile-only. It does not modify the gap contract and does not unlock generation.
+A later version may add more target-reference-specific checks before L4/L5.
 
-## Kernel unresolved diagnosis
+## Failure taxonomy additions
 
-XPortHLS can diagnose unresolved configured kernels left by the deterministic Kernel Name Resolver. The diagnosis classifies each unresolved configured kernel into causes such as compute-unit instance names, alias/normalization gaps, helper/wrapper mismatches, missing HLS top functions, extraction pointer gaps, parser false positives, or insufficient evidence.
-
-Example:
-
-```bash
-python3 -m xporthls.realrepo.run_kernel_unresolved_diagnosis_v020 \
-  --case-id hisparse_u280_profile \
-  --kernel-resolution-report experiments/runs/hisparse_u280_profile_kernel_name_resolution_report_v019.json \
-  --app-ir experiments/runs/hisparse_application_ir_v2_v014.json \
-  --build-ir experiments/runs/hisparse_build_ir_v012.json \
-  --connectivity-ir experiments/runs/hisparse_connectivity_ir_v012.json \
-  --hls-ir experiments/runs/hisparse_hls_interface_ir_v013.json \
-  --out-dir experiments/runs
-```
-
-The runner writes:
+Current and planned failure categories should include:
 
 ```text
-experiments/runs/hisparse_u280_profile_kernel_unresolved_diagnosis_v020.json
-experiments/runs/hisparse_u280_profile_kernel_unresolved_diagnosis_validation_v020.json
+F_XRT_HOST_RUNTIME
+F_PLATFORM_TARGET
+F_MEMORY_HBM_PC
+F_STREAM_AXIS
+F_PLACEMENT_SLR
+F_HLS_INTERFACE
+F_KERNEL_NAME
+F_VERSION_CORRECTNESS
+F_UNKNOWN
 ```
 
-The v0.0.20 diagnosis is deterministic and profile-only. It does not update the gap contract and does not unlock generation.
+`F_VERSION_CORRECTNESS` is important for target-side changes caused by toolchain/platform version behavior, including shuffler-related correctness fixes.
 
-## Kernel alias table and resolver v2
+## LLM policy
 
-XPortHLS can turn unresolved kernel-name diagnosis results into a deterministic alias table and apply it in Kernel Name Resolver v2. This creates a report-level resolution and a contract-update proposal for `GAP-KERNEL-NAME-001`.
-
-Example:
-
-```bash
-python3 -m xporthls.realrepo.run_kernel_alias_resolution_v021 \
-  --case-id hisparse_u280_profile \
-  --diagnosis experiments/runs/hisparse_u280_profile_kernel_unresolved_diagnosis_v020.json \
-  --v1-report experiments/runs/hisparse_u280_profile_kernel_name_resolution_report_v019.json \
-  --gap-contract experiments/runs/hisparse_u280_profile_gap_contract_v016.json \
-  --resolver-plan experiments/runs/hisparse_u280_profile_gap_resolver_plan_v018.json \
-  --out-dir experiments/runs
-```
-
-The runner writes:
+The LLM must remain bounded:
 
 ```text
-experiments/runs/hisparse_u280_profile_kernel_alias_table_v021.json
-experiments/runs/hisparse_u280_profile_kernel_name_resolution_report_v2_v021.json
-experiments/runs/hisparse_u280_profile_kernel_gap_update_proposal_v021.json
-experiments/runs/hisparse_u280_profile_kernel_alias_resolution_validation_v021.json
+LLM is not a source of facts.
+LLM is not an executor.
+LLM is not a correctness judge.
+LLM cannot modify contracts directly.
+LLM cannot unlock generator.
+LLM cannot replace validators.
+LLM cannot bypass build/run evidence.
 ```
 
-The v0.0.21 flow is deterministic and proposal-only. It does not modify the gap contract and does not unlock generation.
-
-## Gap contract patch apply
-
-XPortHLS can apply a validated resolver-specific contract update proposal to produce a patched source-to-target gap contract. The v0.0.22 patch applies the Kernel Name Resolver v2 proposal for `GAP-KERNEL-NAME-001`.
-
-Example:
-
-```bash
-python3 -m xporthls.realrepo.run_gap_contract_patch_v022 \
-  --case-id hisparse_u280_profile \
-  --original-contract experiments/runs/hisparse_u280_profile_gap_contract_v016.json \
-  --proposal experiments/runs/hisparse_u280_profile_kernel_gap_update_proposal_v021.json \
-  --v2-report experiments/runs/hisparse_u280_profile_kernel_name_resolution_report_v2_v021.json \
-  --out-dir experiments/runs
-```
-
-The runner writes:
+In v0.0.23:
 
 ```text
-experiments/runs/hisparse_u280_profile_gap_contract_patched_v022.json
-experiments/runs/hisparse_u280_profile_gap_contract_patch_report_v022.json
-experiments/runs/hisparse_u280_profile_gap_contract_patch_validation_v022.json
+llm_enabled: false
+default_backend: disabled
+real_backend_allowed: false
+network_access_allowed: false
+request_status: blocked_by_policy
 ```
 
-The patched contract removes `GAP-KERNEL-NAME-001` from the blocking list but remains `blocked_profile_only` because other blocking gaps remain. Generation remains blocked by the generator guard.
+Future mock LLM stages must still be read-only unless explicitly validated.
 
-## ModelAdapter and LLM trace infrastructure
+## Development rule of thumb
 
-XPortHLS includes a ModelAdapter safety boundary for future LLM-assisted diagnosis and repair planning. In v0.0.23, real model calls are disabled by default. The adapter creates an `llm_request.v1`, blocks execution by policy, records a `llm_trace_ledger.v1`, records a `llm_budget_ledger.v1`, and validates that no model, network, source modification, contract mutation, or generator unlock occurred.
-
-Example:
-
-```bash
-python3 -m xporthls.llm.run_model_adapter_probe_v023 \
-  --case-id hisparse_u280_profile \
-  --application-ir experiments/runs/hisparse_application_ir_v2_v014.json \
-  --gap-contract experiments/runs/hisparse_u280_profile_gap_contract_patched_v022.json \
-  --resolver-plan experiments/runs/hisparse_u280_profile_gap_resolver_plan_v018.json \
-  --patch-report experiments/runs/hisparse_u280_profile_gap_contract_patch_report_v022.json \
-  --out-dir experiments/runs
-```
-
-The runner writes:
+For every new capability:
 
 ```text
-experiments/runs/hisparse_u280_profile_model_adapter_probe_v023.json
-experiments/runs/hisparse_u280_profile_llm_trace_ledger_v023.json
-experiments/runs/hisparse_u280_profile_llm_budget_ledger_v023.json
-experiments/runs/hisparse_u280_profile_model_adapter_validation_v023.json
+extract facts
+write IR
+write report
+write validator
+write replay
+prove generator remains blocked unless contract allows
+commit only source and replay, not run artifacts
 ```
 
-The v0.0.23 adapter is read-only and disabled by default. It does not call a real model, does not execute shell commands, does not modify contracts, and does not unlock generation.
+For every resolved gap:
+
+```text
+detect
+diagnose
+resolve
+propose patch
+apply patch
+validate
+prove guard behavior
+```
+
+For every target-reference feature:
+
+```text
+extract target evidence
+record source path and digest
+classify as correctness / migration pattern / optimization note
+validate schema
+do not mutate migration contract directly
+```
+
+## Current project sentence
+
+A safe one-sentence description:
+
+```text
+XPortHLS is a version-aware XRT->AVED engineering migration framework that extracts source application facts, builds machine-checkable migration contracts, applies deterministic resolvers, and uses validators, guards, and evidence ledgers to safely migrate XRT-based Alveo HLS applications toward native AVED projects on V80.
+```
