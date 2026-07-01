@@ -255,15 +255,15 @@ Status: in progress.
 
 ### Phase 8 — Generator Stub
 
-Status: planned.
+Status: in progress.
 
-- [ ] Add HLS IP generator stub
+- [x] Add HLS IP generator stub
 - [ ] Add register map generator stub
 - [ ] Add address map generator stub
-- [ ] Add QDMA host generator stub
-- [ ] Add BD/Tcl generator stub
-- [ ] Add build script generator stub
-- [ ] Generate light_ddr target skeleton
+- [x] Add QDMA host generator stub
+- [x] Add BD/Tcl generator stub
+- [x] Add build script generator stub
+- [x] Generate light_ddr target skeleton
 
 ### Phase 9 — Evidence System
 
