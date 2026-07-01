@@ -354,3 +354,26 @@ experiments/runs/hisparse_build_connectivity_report_v012.json
 ```
 
 The extractor is analysis-only. It does not generate an AVED project.
+
+## HLS interface extraction
+
+XPortHLS can extract HLS kernel interface facts from a real Vitis/XRT repository. This produces an HLS Interface IR with kernel candidates, function arguments, HLS pragmas, interface ports, stream usage, and include dependencies.
+
+Example:
+
+```bash
+python3 -m xporthls.realrepo.run_hls_interface_v013 \
+  --repo /mnt/data/xporthls_benchmarks/HiSparse \
+  --case-id hisparse \
+  --build-ir experiments/runs/hisparse_build_ir_v012.json \
+  --connectivity-ir experiments/runs/hisparse_connectivity_ir_v012.json
+```
+
+The extractor writes:
+
+```text
+experiments/runs/hisparse_hls_interface_ir_v013.json
+experiments/runs/hisparse_hls_interface_report_v013.json
+```
+
+The extractor is analysis-only. It does not generate an AVED project.
