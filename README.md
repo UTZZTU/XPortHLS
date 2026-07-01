@@ -426,3 +426,27 @@ python3 -m xporthls.realrepo.validate_profile_case_v015 \
 By default, the case runner reuses the local HiSparse checkout and skips `git pull` to avoid unnecessary network delays. Set `XPORT_HISPARSE_SKIP_PULL=0` to refresh the checkout.
 
 The case is analysis-only. It does not generate an AVED project.
+
+## Source-to-target gap contract
+
+XPortHLS can convert ApplicationIR v2 gaps into a deterministic source-to-target gap contract. The contract decides whether target generation is allowed and records blocking gaps, warnings, evidence, and required next capabilities.
+
+Example:
+
+```bash
+python3 -m xporthls.realrepo.run_gap_contract_v016 \
+  --case-id hisparse_u280_profile \
+  --app-ir experiments/runs/hisparse_application_ir_v2_v014.json \
+  --expected-gaps cases/hisparse_u280_profile/expected_gaps.json \
+  --platform-pack platform_packs/v80_aved_2025_1_stub \
+  --out-dir experiments/runs
+```
+
+The builder writes:
+
+```text
+experiments/runs/hisparse_u280_profile_gap_contract_v016.json
+experiments/runs/hisparse_u280_profile_gap_contract_report_v016.json
+```
+
+The contract is deterministic and profile-only at this stage. It does not generate an AVED project.
