@@ -450,3 +450,19 @@ experiments/runs/hisparse_u280_profile_gap_contract_report_v016.json
 ```
 
 The contract is deterministic and profile-only at this stage. It does not generate an AVED project.
+
+## Contract-gated generator guard
+
+XPortHLS prevents target generation when the source-to-target gap contract blocks migration. A generator wrapper must read the gap contract before creating target output.
+
+Example:
+
+```bash
+python3 -m xporthls.generators.run_guarded_stub_generation_v017 \
+  --contract experiments/runs/hisparse_u280_profile_gap_contract_v016.json \
+  --case-id hisparse_u280_profile \
+  --expect-blocked \
+  --dry-run
+```
+
+For the HiSparse profile-only case, generation is expected to be blocked because the contract contains blocking gaps such as XRT host rewrite, U280-to-V80 platform mapping, HBM memory topology mapping, AXIS/K2K stream mapping, SLR placement, kernel-name resolution, and HLS interface lowering.
