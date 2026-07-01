@@ -332,3 +332,25 @@ experiments/runs/hisparse_realrepo_profile_report_v011.json
 ```
 
 The profiler is analysis-only. It does not generate an AVED project.
+
+## Build and connectivity extraction
+
+XPortHLS can extract build and connectivity facts from a real Vitis/XRT repository. This produces a BuildIR and ConnectivityIR used by later migration stages.
+
+Example:
+
+```bash
+python3 -m xporthls.realrepo.run_build_connectivity_v012 \
+  --repo /mnt/data/xporthls_benchmarks/HiSparse \
+  --case-id hisparse
+```
+
+The extractor writes:
+
+```text
+experiments/runs/hisparse_build_ir_v012.json
+experiments/runs/hisparse_connectivity_ir_v012.json
+experiments/runs/hisparse_build_connectivity_report_v012.json
+```
+
+The extractor is analysis-only. It does not generate an AVED project.

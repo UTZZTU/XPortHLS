@@ -176,9 +176,9 @@ def build_compatibility_profile(
         "capability_matrix": supported,
         "required_next_capabilities": sorted(set(gaps)),
         "recommended_next_version": {
-            "version": "v0.0.12",
-            "name": "Vitis Build + Connectivity Extractor",
-            "why": "The profile shows real projects need Makefile/v++/connectivity parsing before ApplicationIR can represent them."
+            "version": "v0.0.13",
+            "name": "HLS Interface Extractor v1",
+            "why": "After BuildIR and ConnectivityIR, the next required layer is extracting HLS interfaces, m_axi bundles, AXIS ports and dataflow pragmas."
         }
     }
 
