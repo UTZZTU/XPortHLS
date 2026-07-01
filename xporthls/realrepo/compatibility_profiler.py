@@ -176,9 +176,9 @@ def build_compatibility_profile(
         "capability_matrix": supported,
         "required_next_capabilities": sorted(set(gaps)),
         "recommended_next_version": {
-            "version": "v0.0.14",
-            "name": "Multi-kernel ApplicationIR v2",
-            "why": "After BuildIR, ConnectivityIR and HLS Interface IR, the next required layer is a unified multi-kernel ApplicationIR v2."
+            "version": "v0.0.15",
+            "name": "HiSparse profile-only case pack",
+            "why": "After ApplicationIR v2, the next step is to make HiSparse a repeatable profile-only case with expected gaps and source references."
         }
     }
 

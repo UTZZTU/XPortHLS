@@ -377,3 +377,31 @@ experiments/runs/hisparse_hls_interface_report_v013.json
 ```
 
 The extractor is analysis-only. It does not generate an AVED project.
+
+## Multi-kernel ApplicationIR v2
+
+XPortHLS can merge real-repository facts into a multi-kernel ApplicationIR v2. This IR combines repository census data, source platform profile, build facts, connectivity facts, HLS interfaces, memory topology, stream edges, and kernel graph alignment.
+
+Example:
+
+```bash
+python3 -m xporthls.realrepo.run_application_ir_v2_v014 \
+  --case-id hisparse \
+  --target-platform v80_aved_2025_1_stub \
+  --target-ecosystem AVED \
+  --census experiments/runs/hisparse_repo_census_v011.json \
+  --source-profile experiments/runs/hisparse_source_platform_profile_v011.json \
+  --build-ir experiments/runs/hisparse_build_ir_v012.json \
+  --connectivity-ir experiments/runs/hisparse_connectivity_ir_v012.json \
+  --hls-ir experiments/runs/hisparse_hls_interface_ir_v013.json \
+  --compatibility-profile experiments/runs/hisparse_compatibility_profile_v011.json
+```
+
+The builder writes:
+
+```text
+experiments/runs/hisparse_application_ir_v2_v014.json
+experiments/runs/hisparse_application_ir_v2_report_v014.json
+```
+
+ApplicationIR v2 is analysis-only at this stage. It does not generate an AVED project.
