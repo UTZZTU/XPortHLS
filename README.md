@@ -693,3 +693,25 @@ experiments/runs/hisparse_u280_profile_to_spmv_on_v80_pattern_pairing_v025.json
 experiments/runs/hisparse_u280_profile_to_spmv_on_v80_pattern_pairing_report_v025.json
 experiments/runs/hisparse_u280_profile_to_spmv_on_v80_pattern_pairing_validation_v025.json
 ```
+
+## Target-Aware Gap Resolution Plan v0.0.26
+
+v0.0.26 upgrades the old resolver plan using target-side SPMV-on-V80 evidence and v0.0.25 source-target pattern pairings.
+
+This version produces `target_aware_gap_resolution_plan.v1` for the six remaining blockers. It assigns concrete next resolver names, priorities, required input evidence, dependencies, validation requirements, and explicit forbidden actions.
+
+It does not execute resolvers, does not mark any gap as resolved, does not modify the contract, does not unlock the generator, and does not call an LLM.
+
+Recommended next concrete resolver after v0.0.26:
+
+```text
+v0.0.27 — AVEDHostRuntimePatternResolver for GAP-XRT-HOST-001
+```
+
+Expected artifacts:
+
+```text
+experiments/runs/hisparse_u280_profile_to_spmv_on_v80_target_aware_resolver_plan_v026.json
+experiments/runs/hisparse_u280_profile_to_spmv_on_v80_target_aware_resolver_plan_report_v026.json
+experiments/runs/hisparse_u280_profile_to_spmv_on_v80_target_aware_resolver_plan_validation_v026.json
+```
