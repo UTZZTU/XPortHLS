@@ -246,12 +246,12 @@ Status: planned.
 
 ### Phase 7 — L0-pre and L0-post
 
-Status: planned.
+Status: in progress.
 
-- [ ] Split current L0 checker into L0-pre and L0-post
-- [ ] L0-pre checks source project, ApplicationIR, Platform Pack and MigrationContract
-- [ ] L0-post checks generated project, forbidden APIs, register/address maps and templates
-- [ ] Add JSON reports for both stages
+- [x] Split current L0 checker into L0-pre and L0-post
+- [x] L0-pre checks source project, ApplicationIR, case metadata and MigrationContract
+- [x] L0-post checks generated project and forbidden XRT API/artifact leftovers
+- [x] Add JSON reports for both stages
 
 ### Phase 8 — Generator Stub
 

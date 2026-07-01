@@ -9,6 +9,8 @@ from xporthls.scanner.repo_scanner import scan_repository
 from xporthls.ir.platform_ir import PlatformIR
 from xporthls.ir.migration_contract import MigrationContract
 from xporthls.trace.run_logger import RunTrace, utc_now, new_run_dir, run_command
+from xporthls.validators.l0_pre_checker import run_l0_pre
+from xporthls.validators.l0_post_checker import run_l0_post
 
 
 def cmd_env(args: argparse.Namespace) -> int:
@@ -144,6 +146,31 @@ def cmd_contract(args: argparse.Namespace) -> int:
     return 0
 
 
+
+def cmd_validate(args: argparse.Namespace) -> int:
+    if args.level == "L0-pre":
+        if not args.app_ir:
+            raise SystemExit("--app-ir is required for L0-pre")
+        report = run_l0_pre(args.app_ir, args.contract)
+    elif args.level == "L0-post":
+        if not args.project:
+            raise SystemExit("--project is required for L0-post")
+        report = run_l0_post(args.project, args.contract)
+    else:
+        raise SystemExit(f"Unsupported validation level: {args.level}")
+
+    out = Path(args.out)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    report.save(str(out))
+
+    print(f"[xporthls] {report.stage} report written to: {out}")
+    print(f"[xporthls] {report.stage} status: {report.status}")
+    for issue in report.issues:
+        print(f"  - {issue.severity.upper()} {issue.code}: {issue.message}")
+
+    return 0 if report.status in {"pass", "pass_with_warnings"} else 1
+
+
 def cmd_report(args: argparse.Namespace) -> int:
     root = Path(args.runs)
     if not root.exists():
@@ -178,6 +205,14 @@ def build_parser() -> argparse.ArgumentParser:
     contract_p.add_argument("--platform", required=True, help="PlatformIR JSON path")
     contract_p.add_argument("--out", required=True, help="Output MigrationContract JSON path")
     contract_p.set_defaults(func=cmd_contract)
+
+    validate_p = sub.add_parser("validate", help="Run validation levels")
+    validate_p.add_argument("--level", required=True, choices=["L0-pre", "L0-post"])
+    validate_p.add_argument("--app-ir", default=None, help="ApplicationIR JSON path for L0-pre")
+    validate_p.add_argument("--contract", default=None, help="MigrationContract JSON path")
+    validate_p.add_argument("--project", default=None, help="Generated project path for L0-post")
+    validate_p.add_argument("--out", required=True, help="Output validation report JSON path")
+    validate_p.set_defaults(func=cmd_validate)
 
     report_p = sub.add_parser("report", help="Summarize traces")
     report_p.add_argument("--runs", default="/mnt/data/xporthls_runs", help="Runs directory")
