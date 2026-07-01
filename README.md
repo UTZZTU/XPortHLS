@@ -488,3 +488,27 @@ experiments/runs/hisparse_u280_profile_gap_resolver_plan_report_v018.json
 ```
 
 For the HiSparse profile-only case, the resolver plan is expected to remain profile-only and generation-blocked.
+
+## Kernel name resolver
+
+XPortHLS includes a deterministic Kernel Name Resolver for the first blocking resolver in the HiSparse gap resolver plan. It maps configured kernels and compute units from connectivity/build facts to declared HLS functions from ApplicationIR v2.
+
+Example:
+
+```bash
+python3 -m xporthls.realrepo.run_kernel_name_resolution_v019 \
+  --case-id hisparse_u280_profile \
+  --app-ir experiments/runs/hisparse_application_ir_v2_v014.json \
+  --gap-contract experiments/runs/hisparse_u280_profile_gap_contract_v016.json \
+  --resolver-plan experiments/runs/hisparse_u280_profile_gap_resolver_plan_v018.json \
+  --out-dir experiments/runs
+```
+
+The resolver writes:
+
+```text
+experiments/runs/hisparse_u280_profile_kernel_name_resolution_report_v019.json
+experiments/runs/hisparse_u280_profile_kernel_name_resolution_validation_v019.json
+```
+
+The v0.0.19 resolver is deterministic and profile-only. It does not modify the gap contract and does not unlock generation.
