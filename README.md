@@ -590,3 +590,30 @@ experiments/runs/hisparse_u280_profile_gap_contract_patch_validation_v022.json
 ```
 
 The patched contract removes `GAP-KERNEL-NAME-001` from the blocking list but remains `blocked_profile_only` because other blocking gaps remain. Generation remains blocked by the generator guard.
+
+## ModelAdapter and LLM trace infrastructure
+
+XPortHLS includes a ModelAdapter safety boundary for future LLM-assisted diagnosis and repair planning. In v0.0.23, real model calls are disabled by default. The adapter creates an `llm_request.v1`, blocks execution by policy, records a `llm_trace_ledger.v1`, records a `llm_budget_ledger.v1`, and validates that no model, network, source modification, contract mutation, or generator unlock occurred.
+
+Example:
+
+```bash
+python3 -m xporthls.llm.run_model_adapter_probe_v023 \
+  --case-id hisparse_u280_profile \
+  --application-ir experiments/runs/hisparse_application_ir_v2_v014.json \
+  --gap-contract experiments/runs/hisparse_u280_profile_gap_contract_patched_v022.json \
+  --resolver-plan experiments/runs/hisparse_u280_profile_gap_resolver_plan_v018.json \
+  --patch-report experiments/runs/hisparse_u280_profile_gap_contract_patch_report_v022.json \
+  --out-dir experiments/runs
+```
+
+The runner writes:
+
+```text
+experiments/runs/hisparse_u280_profile_model_adapter_probe_v023.json
+experiments/runs/hisparse_u280_profile_llm_trace_ledger_v023.json
+experiments/runs/hisparse_u280_profile_llm_budget_ledger_v023.json
+experiments/runs/hisparse_u280_profile_model_adapter_validation_v023.json
+```
+
+The v0.0.23 adapter is read-only and disabled by default. It does not call a real model, does not execute shell commands, does not modify contracts, and does not unlock generation.
