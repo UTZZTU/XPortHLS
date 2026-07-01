@@ -644,3 +644,27 @@ A safe one-sentence description:
 ```text
 XPortHLS is a version-aware XRT->AVED engineering migration framework that extracts source application facts, builds machine-checkable migration contracts, applies deterministic resolvers, and uses validators, guards, and evidence ledgers to safely migrate XRT-based Alveo HLS applications toward native AVED projects on V80.
 ```
+
+## Target Reference Intake v0.0.24
+
+v0.0.24 adds the first target-side intake path for the known-good SPMV-on-V80 AVED/V80 reference project. It creates `TargetReferenceIR v1` from deterministic repository evidence and records host/QDMA, AXI-Lite/AP_CTRL, HBM/PC address, Vivado/AVED Tcl/BD, HLS IP packaging, stream connection, manual operation trace, known correctness fixes, and optimization notes.
+
+This version does not modify the gap contract, does not unlock the generator, and does not call an LLM.
+
+Typical command:
+
+```bash
+python3 -m xporthls.targetref.run_target_reference_intake_v024 \
+  --case-id spmv_on_v80 \
+  --target-name SPMV-on-V80 \
+  --target-root /mnt/data/xporthls_target_refs/SPMV-on-V80-main \
+  --out-dir experiments/runs
+```
+
+Expected artifacts:
+
+```text
+experiments/runs/spmv_on_v80_target_reference_ir_v024.json
+experiments/runs/spmv_on_v80_target_reference_report_v024.json
+experiments/runs/spmv_on_v80_target_reference_validation_v024.json
+```
