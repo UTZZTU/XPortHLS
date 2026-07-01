@@ -1,0 +1,19 @@
+{
+  "schema_version": "memory_rules.v1",
+  "platform_id": "v80_aved_2025_1_stub",
+  "rules": {
+    "source_group_id_policy": {
+      "description": "Use XRT kernel.group_id(N) as source memory binding candidate.",
+      "verified": true
+    },
+    "ddr_fixture_policy": {
+      "description": "Initial DDR fixture rule for light_ddr.",
+      "verified": false
+    },
+    "hbm_policy": {
+      "description": "HBM mapping is intentionally disabled until manually verified.",
+      "supported": false,
+      "verified": false
+    }
+  }
+}

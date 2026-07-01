@@ -200,7 +200,7 @@ Status: in progress.
 
 ### Phase 5 — Platform Pack v1
 
-Status: planned.
+Status: in progress.
 
 Replace single JSON stub with versioned platform pack directory.
 
@@ -222,13 +222,13 @@ platform_packs/v80_aved_2025_1_stub/
 
 Checklist:
 
-- [ ] Move platform stub into platform pack
-- [ ] Add capabilities file
-- [ ] Add memory rules
-- [ ] Add QDMA rules
-- [ ] Add register rules
-- [ ] Add template metadata
-- [ ] Update PlatformIR loader
+- [x] Move platform stub into platform pack
+- [x] Add capabilities file
+- [x] Add memory rules
+- [x] Add QDMA rules
+- [x] Add register rules
+- [x] Add template metadata
+- [x] Update PlatformIR loader
 
 ### Phase 6 — MigrationContract v1
 

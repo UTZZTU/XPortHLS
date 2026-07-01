@@ -1,0 +1,26 @@
+{
+  "schema_version": "platform_capabilities.v1",
+  "platform_id": "v80_aved_2025_1_stub",
+  "capabilities": {
+    "aved_native_target": {
+      "supported": true,
+      "verified": true
+    },
+    "vivado_centric_flow": {
+      "supported": true,
+      "verified": true
+    },
+    "qdma": {
+      "supported": true,
+      "verified": false
+    },
+    "ddr_fixture_mapping": {
+      "supported": true,
+      "verified": false
+    },
+    "xrt_runtime_as_target": {
+      "supported": false,
+      "verified": true
+    }
+  }
+}

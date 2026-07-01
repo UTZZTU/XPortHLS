@@ -1,0 +1,14 @@
+{
+  "schema_version": "register_rules.v1",
+  "platform_id": "v80_aved_2025_1_stub",
+  "rules": {
+    "scalar_argument_policy": {
+      "verified": true,
+      "description": "Scalar arguments extracted from kernel invocation order become control candidates."
+    },
+    "register_address_policy": {
+      "verified": false,
+      "description": "Final register addresses are not assigned in this stub pack."
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "schema_version": "platform_pack.v1",
+  "platform_id": "v80_aved_2025_1_stub",
+  "name": "AMD Alveo V80 AVED 2025.1 Stub Platform Pack",
+  "vendor": "AMD/Xilinx",
+  "board": "Alveo V80",
+  "target_family": "Versal",
+  "status": "stub_pack_needs_manual_verification",
+  "target": {
+    "ecosystem": "AVED",
+    "board": "Alveo V80",
+    "tool_version": "2025.1",
+    "tool_flow": "Vivado-centric AVED flow"
+  },
+  "tool_flow": "Vivado-centric AVED flow",
+  "vivado_version": "2025.1",
+  "vitis_version": "2025.1",
+  "aved_release": {
+    "release_name": "2025.1 tools V80 AVED release",
+    "release_index_url": "https://xilinx.github.io/AVED/",
+    "documentation_url": "https://xilinx.github.io/AVED/",
+    "repository_url": "https://github.com/Xilinx/AVED",
+    "repository_status": "obsolete_historical_reference",
+    "verification_status": "stub_pack_needs_manual_verification"
+  },
+  "notes": [
+    "This is an early XPortHLS Platform Pack for development.",
+    "It freezes platform identity, source provenance, rule files and template layout.",
+    "Rules marked verified=false must not be treated as final hardware facts."
+  ]
+}

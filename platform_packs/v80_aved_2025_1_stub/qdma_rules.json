@@ -1,0 +1,21 @@
+{
+  "schema_version": "qdma_rules.v1",
+  "platform_id": "v80_aved_2025_1_stub",
+  "rules": {
+    "sync_direction_mapping": {
+      "verified": true,
+      "mapping": {
+        "XCL_BO_SYNC_BO_TO_DEVICE": "host_to_card",
+        "XCL_BO_SYNC_BO_FROM_DEVICE": "card_to_host"
+      }
+    },
+    "queue_policy": {
+      "verified": false,
+      "description": "Queue allocation policy is not verified in this stub pack."
+    },
+    "address_policy": {
+      "verified": false,
+      "description": "Device address assignment requires a later verified AddressMap."
+    }
+  }
+}
