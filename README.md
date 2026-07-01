@@ -307,3 +307,28 @@ v0.0.10  Artifact Registry, Budget Ledger, Replay Manifest
 ## Development notes
 
 The current repository is best treated as a migration framework prototype, not a production AVED generator. The next useful engineering step is to add real-repository profiling so that complex XRT/Vitis projects can be analyzed before migration logic is expanded.
+
+## Real repository profiling
+
+XPortHLS can profile a real XRT/Vitis repository before attempting migration. This is used to identify source platforms, build files, XRT usage, HLS kernels, memory topology hints, connectivity files, and unsupported features.
+
+Example:
+
+```bash
+python3 -m xporthls.realrepo.run_realrepo_profile_v011 \
+  --repo /mnt/data/xporthls_benchmarks/HiSparse \
+  --case-id hisparse \
+  --target-platform v80_aved_2025_1_stub \
+  --target-ecosystem AVED
+```
+
+The profiler writes:
+
+```text
+experiments/runs/hisparse_repo_census_v011.json
+experiments/runs/hisparse_source_platform_profile_v011.json
+experiments/runs/hisparse_compatibility_profile_v011.json
+experiments/runs/hisparse_realrepo_profile_report_v011.json
+```
+
+The profiler is analysis-only. It does not generate an AVED project.
