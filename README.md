@@ -565,3 +565,28 @@ experiments/runs/hisparse_u280_profile_kernel_alias_resolution_validation_v021.j
 ```
 
 The v0.0.21 flow is deterministic and proposal-only. It does not modify the gap contract and does not unlock generation.
+
+## Gap contract patch apply
+
+XPortHLS can apply a validated resolver-specific contract update proposal to produce a patched source-to-target gap contract. The v0.0.22 patch applies the Kernel Name Resolver v2 proposal for `GAP-KERNEL-NAME-001`.
+
+Example:
+
+```bash
+python3 -m xporthls.realrepo.run_gap_contract_patch_v022 \
+  --case-id hisparse_u280_profile \
+  --original-contract experiments/runs/hisparse_u280_profile_gap_contract_v016.json \
+  --proposal experiments/runs/hisparse_u280_profile_kernel_gap_update_proposal_v021.json \
+  --v2-report experiments/runs/hisparse_u280_profile_kernel_name_resolution_report_v2_v021.json \
+  --out-dir experiments/runs
+```
+
+The runner writes:
+
+```text
+experiments/runs/hisparse_u280_profile_gap_contract_patched_v022.json
+experiments/runs/hisparse_u280_profile_gap_contract_patch_report_v022.json
+experiments/runs/hisparse_u280_profile_gap_contract_patch_validation_v022.json
+```
+
+The patched contract removes `GAP-KERNEL-NAME-001` from the blocking list but remains `blocked_profile_only` because other blocking gaps remain. Generation remains blocked by the generator guard.
