@@ -1,0 +1,24 @@
+{
+  "schema_version": "expected_gaps.v1",
+  "case_id": "hisparse_u280_profile",
+  "expected_required_capabilities": [
+    "kernel_name_resolution",
+    "real_xrt_host_semantic_extraction",
+    "source_to_target_gap_contract",
+    "source_to_target_memory_gap_contract",
+    "stream_edge_extractor"
+  ],
+  "expected_unsupported_features": [
+    "source_hbm_topology_mapping",
+    "axis_stream_and_k2k_migration",
+    "source_slr_placement_mapping"
+  ],
+  "expected_unknown_kinds": [
+    "configured_kernel_without_declared_hls_function",
+    "declared_hls_function_without_connectivity_config"
+  ],
+  "notes": [
+    "Gaps are expected in v0.0.15 because this case is profile-only.",
+    "The goal is to keep the gaps explicit and stable, not to hide them."
+  ]
+}

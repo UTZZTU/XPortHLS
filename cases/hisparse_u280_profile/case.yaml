@@ -1,0 +1,29 @@
+case_id: hisparse_u280_profile
+name: HiSparse U280 profile-only case
+case_type: real_repo_profile
+migration_status: profile_only
+
+source:
+  repository_url: https://github.com/cornell-zhang/HiSparse.git
+  default_branch: master
+  local_checkout: /mnt/data/xporthls_benchmarks/HiSparse
+  runtime: XRT
+  board: Alveo U280
+  toolchain: Vitis 2020.2
+  shell_platform: xilinx_u280_xdma_201920_3
+  memory_model: HBM
+
+target:
+  platform: v80_aved_2025_1_stub
+  ecosystem: AVED
+  tool_version: 2025.1
+
+validation:
+  profile_only: true
+  required_stages:
+    - repo_census.v1
+    - source_platform_profile.v1
+    - build_ir.v1
+    - connectivity_ir.v1
+    - hls_interface_ir.v1
+    - application_ir.v2

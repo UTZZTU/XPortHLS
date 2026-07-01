@@ -405,3 +405,24 @@ experiments/runs/hisparse_application_ir_v2_report_v014.json
 ```
 
 ApplicationIR v2 is analysis-only at this stage. It does not generate an AVED project.
+
+## HiSparse profile-only case
+
+XPortHLS includes a profile-only case for the HiSparse U280 repository. This case runs the real-repository profiling pipeline and validates that the expected source profile, build facts, connectivity facts, HLS interface facts, ApplicationIR v2, and known gaps remain stable.
+
+Example:
+
+```bash
+python3 -m xporthls.realrepo.run_profile_case_v015 \
+  --case-dir cases/hisparse_u280_profile \
+  --out-dir experiments/runs
+
+python3 -m xporthls.realrepo.validate_profile_case_v015 \
+  --case-dir cases/hisparse_u280_profile \
+  --case-run-report experiments/runs/hisparse_u280_profile_case_run_report_v015.json \
+  --out experiments/runs/hisparse_u280_profile_case_validation_v015.json
+```
+
+By default, the case runner reuses the local HiSparse checkout and skips `git pull` to avoid unnecessary network delays. Set `XPORT_HISPARSE_SKIP_PULL=0` to refresh the checkout.
+
+The case is analysis-only. It does not generate an AVED project.

@@ -1,0 +1,27 @@
+{
+  "schema_version": "source_repo_ref.v1",
+  "case_id": "hisparse_u280_profile",
+  "name": "HiSparse",
+  "description": "Profile-only real repository case for a U280/XRT/Vitis/HBM sparse matrix-vector multiplication accelerator.",
+  "repository_url": "https://github.com/cornell-zhang/HiSparse.git",
+  "default_branch": "master",
+  "local_checkout": "/mnt/data/xporthls_benchmarks/HiSparse",
+  "source": {
+    "runtime": "XRT",
+    "board": "Alveo U280",
+    "toolchain": "Vitis 2020.2",
+    "shell_platform": "xilinx_u280_xdma_201920_3",
+    "memory_model": "HBM"
+  },
+  "target": {
+    "platform": "v80_aved_2025_1_stub",
+    "ecosystem": "AVED",
+    "tool_version": "2025.1"
+  },
+  "migration_status": "profile_only",
+  "notes": [
+    "This case is used to validate real-repository profiling and IR construction.",
+    "It is not expected to produce a working AVED project in v0.0.15.",
+    "The repository is intentionally kept outside the XPortHLS git tree."
+  ]
+}

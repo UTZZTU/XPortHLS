@@ -1,0 +1,39 @@
+{
+  "schema_version": "expected_profile.v1",
+  "case_id": "hisparse_u280_profile",
+  "source": {
+    "runtime": "XRT",
+    "boards_include": ["U280"],
+    "toolchain_versions_include": ["2020.2"],
+    "shell_platforms_include": ["xilinx_u280_xdma_201920_3"],
+    "memory_model": "HBM"
+  },
+  "target": {
+    "platform": "v80_aved_2025_1_stub",
+    "ecosystem": "AVED"
+  },
+  "minimum_counts": {
+    "repo_files": 100,
+    "build_files": 8,
+    "build_targets": 20,
+    "build_commands": 20,
+    "connectivity_config_files": 5,
+    "connectivity_directives": 80,
+    "memory_mappings": 40,
+    "stream_edges": 10,
+    "slr_assignments": 5,
+    "hls_files": 40,
+    "hls_kernel_candidates": 20,
+    "hls_interface_pragmas": 100,
+    "hls_m_axi": 20,
+    "hls_axis": 10,
+    "hls_s_axilite": 20,
+    "hls_dataflow": 5,
+    "kernel_graph_nodes": 20
+  },
+  "required_memory_kinds": ["HBM"],
+  "required_profile_status": {
+    "migration_status": "profile_only",
+    "application_ir_schema": "application_ir.v2"
+  }
+}
