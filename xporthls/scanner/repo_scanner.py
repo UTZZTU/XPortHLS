@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 from xporthls.ir.application_ir import ApplicationIR, SourceFile, XrtCall
 from xporthls.scanner.xrt_semantic_extractor import extract_xrt_semantics
+from xporthls.cases.case_config import load_case_config, validate_case_config
 
 
 XRT_PATTERNS = {
@@ -47,7 +48,36 @@ def scan_repository(case_path: str) -> ApplicationIR:
     if not root.exists():
         raise FileNotFoundError(f"Case path does not exist: {root}")
 
-    ir = ApplicationIR(project=root.name)
+    case_cfg = load_case_config(str(root))
+    ir = ApplicationIR(
+        project=case_cfg.case_id,
+        source_runtime=case_cfg.source_runtime,
+        case_metadata=case_cfg.to_dict(),
+    )
+
+    for case_issue in validate_case_config(case_cfg, str(root)):
+        if case_issue["severity"] == "error":
+            ir.unknowns.append({
+                "kind": "case_config",
+                "code": case_issue["code"],
+                "message": case_issue["message"]
+            })
+        else:
+            ir.warnings.append(f'{case_issue["code"]}: {case_issue["message"]}')
+
+    if case_cfg.golden:
+        ir.test_entries.append({
+            "kind": "golden",
+            "source": "case.yaml",
+            **case_cfg.golden,
+        })
+
+    if case_cfg.host_entry:
+        ir.test_entries.append({
+            "kind": "host_entry",
+            "source": "case.yaml",
+            "path": case_cfg.host_entry,
+        })
 
     for path in sorted(root.rglob("*")):
         if not path.is_file():

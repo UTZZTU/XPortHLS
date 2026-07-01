@@ -1,0 +1,21 @@
+case_id: light_ddr
+role: lightweight_fixture
+description: Local lightweight XRT/Vitis HLS-style DDR fixture for XPortHLS development.
+source_runtime: XRT
+memory_type: DDR
+complexity: low
+host_entry: src/host.cpp
+kernel_sources:
+  - src/vadd.cpp
+build_entry: Makefile
+golden:
+  type: json
+  path: tests/golden.json
+validation_targets:
+  - L0
+  - L1
+tags:
+  - single_kernel
+  - ddr
+  - xrt_host
+  - hls_kernel

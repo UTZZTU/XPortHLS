@@ -75,6 +75,10 @@ def cmd_scan(args: argparse.Namespace) -> int:
     trace.save(str(run_dir / "trace.json"))
 
     print(f"[xporthls] ApplicationIR written to: {out}")
+    if ir.case_metadata:
+        print(f"[xporthls] Case: {ir.case_metadata.get('case_id')} ({ir.case_metadata.get('role')})")
+        print(f"[xporthls] Memory type: {ir.case_metadata.get('memory_type')}")
+        print(f"[xporthls] Validation targets: {ir.case_metadata.get('validation_targets')}")
     print(f"[xporthls] Files: {len(ir.source_files)}")
     print(f"[xporthls] XRT calls: {len(ir.host_apis)}")
     print(f"[xporthls] Kernel candidates: {len(ir.kernels)}")

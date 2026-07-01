@@ -188,15 +188,15 @@ Status: planned.
 
 ### Phase 4 — case.yaml and Case Registry
 
-Status: planned.
+Status: in progress.
 
-- [ ] Add `cases/light_ddr/case.yaml`
-- [ ] Add case metadata
-- [ ] Add source runtime
-- [ ] Add memory type
-- [ ] Add validation targets
-- [ ] Add golden/test command fields
-- [ ] Update scanner to read case.yaml
+- [x] Add `cases/light_ddr/case.yaml`
+- [x] Add case metadata
+- [x] Add source runtime
+- [x] Add memory type
+- [x] Add validation targets
+- [x] Add golden/test command fields
+- [x] Update scanner to read case.yaml
 
 ### Phase 5 — Platform Pack v1
 

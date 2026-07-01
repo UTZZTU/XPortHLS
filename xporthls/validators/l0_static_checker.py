@@ -56,6 +56,15 @@ def run_l0_static(app_ir_path: str, contract_path: str | None = None) -> L0Repor
     host_transfers = app.get("host_transfers", [])
     unknowns = app.get("unknowns", [])
     facts = app.get("facts", {})
+    case_metadata = app.get("case_metadata", {})
+
+    if not case_metadata:
+        issues.append(L0Issue("warning", "NO_CASE_METADATA", "ApplicationIR has no case_metadata. Add case.yaml for this case."))
+    else:
+        if not case_metadata.get("case_id"):
+            issues.append(L0Issue("error", "CASE_METADATA_NO_ID", "case_metadata must include case_id."))
+        if not case_metadata.get("validation_targets"):
+            issues.append(L0Issue("warning", "CASE_METADATA_NO_VALIDATION_TARGETS", "case_metadata should include validation_targets."))
 
     if not source_files:
         issues.append(L0Issue("error", "NO_SOURCE_FILES", "No source files were discovered."))
@@ -115,6 +124,10 @@ def run_l0_static(app_ir_path: str, contract_path: str | None = None) -> L0Repor
         summary={
             "project": app.get("project", "unknown"),
             "schema_version": facts.get("schema_version", "unknown") if isinstance(facts, dict) else "missing",
+            "case_id": case_metadata.get("case_id", "unknown") if isinstance(case_metadata, dict) else "missing",
+            "case_role": case_metadata.get("role", "unknown") if isinstance(case_metadata, dict) else "missing",
+            "case_memory_type": case_metadata.get("memory_type", "unknown") if isinstance(case_metadata, dict) else "missing",
+            "case_validation_targets": case_metadata.get("validation_targets", []) if isinstance(case_metadata, dict) else [],
             "num_source_files": len(source_files),
             "num_xrt_calls": len(host_apis),
             "num_kernel_candidates": len(kernels),

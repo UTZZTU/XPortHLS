@@ -44,6 +44,7 @@ class ApplicationIR:
 
     project: str
     source_runtime: str = "XRT"
+    case_metadata: dict[str, Any] = field(default_factory=dict)
 
     # Legacy/top-level fields kept for compatibility.
     source_files: list[SourceFile] = field(default_factory=list)
@@ -72,6 +73,7 @@ class ApplicationIR:
             "schema_version": "application_ir.v1",
             "project": self.project,
             "source_runtime": self.source_runtime,
+            "case": self.case_metadata,
             "source_files": [asdict(x) for x in self.source_files],
             "xrt": {
                 "host_apis": [asdict(x) for x in self.host_apis],
