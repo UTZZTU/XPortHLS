@@ -668,3 +668,28 @@ experiments/runs/spmv_on_v80_target_reference_ir_v024.json
 experiments/runs/spmv_on_v80_target_reference_report_v024.json
 experiments/runs/spmv_on_v80_target_reference_validation_v024.json
 ```
+
+## Source-Target Pattern Pairing v0.0.25
+
+v0.0.25 adds deterministic source-target migration pattern pairing between the source-side HiSparse `ApplicationIR v2` and the target-side SPMV-on-V80 `TargetReferenceIR v1`.
+
+This version produces candidate migration patterns for the six remaining post-v0.0.22 blocking gaps:
+
+```text
+GAP-XRT-HOST-001
+GAP-PLATFORM-001
+GAP-MEM-HBM-001
+GAP-STREAM-AXIS-001
+GAP-PLACEMENT-SLR-001
+GAP-HLS-INTERFACE-001
+```
+
+It does not mark any gap as resolved. It does not modify the contract, does not unlock generation, and does not call an LLM.
+
+Expected artifacts:
+
+```text
+experiments/runs/hisparse_u280_profile_to_spmv_on_v80_pattern_pairing_v025.json
+experiments/runs/hisparse_u280_profile_to_spmv_on_v80_pattern_pairing_report_v025.json
+experiments/runs/hisparse_u280_profile_to_spmv_on_v80_pattern_pairing_validation_v025.json
+```
