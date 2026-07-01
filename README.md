@@ -232,16 +232,16 @@ Checklist:
 
 ### Phase 6 — MigrationContract v1
 
-Status: planned.
+Status: in progress.
 
-- [ ] Add contract states: Proposed, StaticallyChecked, RuntimeValidated
-- [ ] Add FunctionalContract
-- [ ] Add InterfaceContract
-- [ ] Add MemoryContract
-- [ ] Add ControlContract
-- [ ] Add BuildContract
-- [ ] Add ValidationContract
-- [ ] Keep ExecutionPolicy separate from MigrationContract
+- [x] Add contract states: Proposed, StaticallyChecked, RuntimeValidated
+- [x] Add FunctionalContract
+- [x] Add InterfaceContract
+- [x] Add MemoryContract
+- [x] Add ControlContract
+- [x] Add BuildContract
+- [x] Add ValidationContract
+- [x] Keep ExecutionPolicy separate from MigrationContract
 - [ ] Allow Generator to read only StaticallyChecked contracts
 
 ### Phase 7 — L0-pre and L0-post
