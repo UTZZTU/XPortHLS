@@ -5,6 +5,8 @@ from dataclasses import dataclass, asdict, field
 from pathlib import Path
 from typing import Any
 
+from xporthls.ir.schema_checks import check_application_ir_schema
+
 
 @dataclass
 class L0Issue:
@@ -37,6 +39,13 @@ def run_l0_static(app_ir_path: str, contract_path: str | None = None) -> L0Repor
 
     issues: list[L0Issue] = []
 
+    for issue in check_application_ir_schema(app):
+        issues.append(L0Issue(
+            severity=issue["severity"],
+            code=issue["code"],
+            message=issue["message"]
+        ))
+
     source_files = app.get("source_files", [])
     host_apis = app.get("host_apis", [])
     kernels = app.get("kernels", [])
@@ -46,6 +55,7 @@ def run_l0_static(app_ir_path: str, contract_path: str | None = None) -> L0Repor
     sync_operations = app.get("sync_operations", [])
     host_transfers = app.get("host_transfers", [])
     unknowns = app.get("unknowns", [])
+    facts = app.get("facts", {})
 
     if not source_files:
         issues.append(L0Issue("error", "NO_SOURCE_FILES", "No source files were discovered."))
@@ -74,6 +84,22 @@ def run_l0_static(app_ir_path: str, contract_path: str | None = None) -> L0Repor
     if not build_targets:
         issues.append(L0Issue("warning", "NO_BUILD_ENTRY", "No Makefile/CMake build entry was detected."))
 
+    if facts:
+        xrt_facts = facts.get("xrt", {})
+        if len(xrt_facts.get("buffers", [])) != len(buffers):
+            issues.append(L0Issue(
+                "error",
+                "FACTS_BUFFER_MISMATCH",
+                "facts.xrt.buffers length does not match top-level buffers length."
+            ))
+
+        if len(xrt_facts.get("kernel_invocations", [])) != len(kernel_invocations):
+            issues.append(L0Issue(
+                "error",
+                "FACTS_KERNEL_INVOCATION_MISMATCH",
+                "facts.xrt.kernel_invocations length does not match top-level kernel_invocations length."
+            ))
+
     if contract is not None:
         if not contract.get("obligations"):
             issues.append(L0Issue("error", "NO_CONTRACT_OBLIGATIONS", "MigrationContract has no obligations."))
@@ -88,6 +114,7 @@ def run_l0_static(app_ir_path: str, contract_path: str | None = None) -> L0Repor
         issues=issues,
         summary={
             "project": app.get("project", "unknown"),
+            "schema_version": facts.get("schema_version", "unknown") if isinstance(facts, dict) else "missing",
             "num_source_files": len(source_files),
             "num_xrt_calls": len(host_apis),
             "num_kernel_candidates": len(kernels),
@@ -97,6 +124,7 @@ def run_l0_static(app_ir_path: str, contract_path: str | None = None) -> L0Repor
             "num_sync_operations": len(sync_operations),
             "num_host_transfers": len(host_transfers),
             "num_unknowns": len(unknowns),
+            "has_facts": isinstance(facts, dict) and bool(facts),
             "has_contract": contract is not None,
         },
     )

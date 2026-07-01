@@ -83,6 +83,7 @@ def cmd_scan(args: argparse.Namespace) -> int:
     print(f"[xporthls] Sync operations: {len(ir.sync_operations)}")
     print(f"[xporthls] Host transfers: {len(ir.host_transfers)}")
     print(f"[xporthls] Unknowns: {len(ir.unknowns)}")
+    print("[xporthls] ApplicationIR schema: application_ir.v1")
     if ir.warnings:
         print("[xporthls] Warnings:")
         for w in ir.warnings:
