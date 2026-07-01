@@ -512,3 +512,29 @@ experiments/runs/hisparse_u280_profile_kernel_name_resolution_validation_v019.js
 ```
 
 The v0.0.19 resolver is deterministic and profile-only. It does not modify the gap contract and does not unlock generation.
+
+## Kernel unresolved diagnosis
+
+XPortHLS can diagnose unresolved configured kernels left by the deterministic Kernel Name Resolver. The diagnosis classifies each unresolved configured kernel into causes such as compute-unit instance names, alias/normalization gaps, helper/wrapper mismatches, missing HLS top functions, extraction pointer gaps, parser false positives, or insufficient evidence.
+
+Example:
+
+```bash
+python3 -m xporthls.realrepo.run_kernel_unresolved_diagnosis_v020 \
+  --case-id hisparse_u280_profile \
+  --kernel-resolution-report experiments/runs/hisparse_u280_profile_kernel_name_resolution_report_v019.json \
+  --app-ir experiments/runs/hisparse_application_ir_v2_v014.json \
+  --build-ir experiments/runs/hisparse_build_ir_v012.json \
+  --connectivity-ir experiments/runs/hisparse_connectivity_ir_v012.json \
+  --hls-ir experiments/runs/hisparse_hls_interface_ir_v013.json \
+  --out-dir experiments/runs
+```
+
+The runner writes:
+
+```text
+experiments/runs/hisparse_u280_profile_kernel_unresolved_diagnosis_v020.json
+experiments/runs/hisparse_u280_profile_kernel_unresolved_diagnosis_validation_v020.json
+```
+
+The v0.0.20 diagnosis is deterministic and profile-only. It does not update the gap contract and does not unlock generation.
