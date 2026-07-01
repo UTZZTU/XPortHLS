@@ -538,3 +538,30 @@ experiments/runs/hisparse_u280_profile_kernel_unresolved_diagnosis_validation_v0
 ```
 
 The v0.0.20 diagnosis is deterministic and profile-only. It does not update the gap contract and does not unlock generation.
+
+## Kernel alias table and resolver v2
+
+XPortHLS can turn unresolved kernel-name diagnosis results into a deterministic alias table and apply it in Kernel Name Resolver v2. This creates a report-level resolution and a contract-update proposal for `GAP-KERNEL-NAME-001`.
+
+Example:
+
+```bash
+python3 -m xporthls.realrepo.run_kernel_alias_resolution_v021 \
+  --case-id hisparse_u280_profile \
+  --diagnosis experiments/runs/hisparse_u280_profile_kernel_unresolved_diagnosis_v020.json \
+  --v1-report experiments/runs/hisparse_u280_profile_kernel_name_resolution_report_v019.json \
+  --gap-contract experiments/runs/hisparse_u280_profile_gap_contract_v016.json \
+  --resolver-plan experiments/runs/hisparse_u280_profile_gap_resolver_plan_v018.json \
+  --out-dir experiments/runs
+```
+
+The runner writes:
+
+```text
+experiments/runs/hisparse_u280_profile_kernel_alias_table_v021.json
+experiments/runs/hisparse_u280_profile_kernel_name_resolution_report_v2_v021.json
+experiments/runs/hisparse_u280_profile_kernel_gap_update_proposal_v021.json
+experiments/runs/hisparse_u280_profile_kernel_alias_resolution_validation_v021.json
+```
+
+The v0.0.21 flow is deterministic and proposal-only. It does not modify the gap contract and does not unlock generation.
