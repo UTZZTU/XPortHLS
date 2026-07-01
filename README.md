@@ -267,11 +267,11 @@ Status: in progress.
 
 ### Phase 9 — Evidence System
 
-Status: planned.
+Status: in progress.
 
-- [ ] Add Artifact Registry
+- [x] Add Artifact Registry
 - [ ] Add Patch Ledger
-- [ ] Add Budget Ledger
+- [x] Add Budget Ledger
 - [ ] Add Replay command
 - [ ] Record model calls, token usage, tool calls, patches, validation results and wall time
 
