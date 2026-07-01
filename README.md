@@ -466,3 +466,25 @@ python3 -m xporthls.generators.run_guarded_stub_generation_v017 \
 ```
 
 For the HiSparse profile-only case, generation is expected to be blocked because the contract contains blocking gaps such as XRT host rewrite, U280-to-V80 platform mapping, HBM memory topology mapping, AXIS/K2K stream mapping, SLR placement, kernel-name resolution, and HLS interface lowering.
+
+## Gap resolver plan
+
+XPortHLS can turn a blocked source-to-target gap contract into a deterministic resolver plan. The plan does not execute resolvers and does not mark any gap as resolved. It records the required inputs, output schemas, ordered steps, dependency graph, success criteria, and state-transition policy for each gap.
+
+Example:
+
+```bash
+python3 -m xporthls.realrepo.run_gap_resolver_plan_v018 \
+  --case-id hisparse_u280_profile \
+  --contract experiments/runs/hisparse_u280_profile_gap_contract_v016.json \
+  --out-dir experiments/runs
+```
+
+The runner writes:
+
+```text
+experiments/runs/hisparse_u280_profile_gap_resolver_plan_v018.json
+experiments/runs/hisparse_u280_profile_gap_resolver_plan_report_v018.json
+```
+
+For the HiSparse profile-only case, the resolver plan is expected to remain profile-only and generation-blocked.
