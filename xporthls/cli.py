@@ -63,6 +63,11 @@ def cmd_scan(args: argparse.Namespace) -> int:
             "num_files": len(ir.source_files),
             "num_xrt_calls": len(ir.host_apis),
             "num_kernel_candidates": len(ir.kernels),
+            "num_buffers": len(ir.buffers),
+            "num_kernel_invocations": len(ir.kernel_invocations),
+            "num_sync_operations": len(ir.sync_operations),
+            "num_host_transfers": len(ir.host_transfers),
+            "num_unknowns": len(ir.unknowns),
             "warnings": ir.warnings
         },
         artifacts=[str(out)]
@@ -73,6 +78,11 @@ def cmd_scan(args: argparse.Namespace) -> int:
     print(f"[xporthls] Files: {len(ir.source_files)}")
     print(f"[xporthls] XRT calls: {len(ir.host_apis)}")
     print(f"[xporthls] Kernel candidates: {len(ir.kernels)}")
+    print(f"[xporthls] Buffers: {len(ir.buffers)}")
+    print(f"[xporthls] Kernel invocations: {len(ir.kernel_invocations)}")
+    print(f"[xporthls] Sync operations: {len(ir.sync_operations)}")
+    print(f"[xporthls] Host transfers: {len(ir.host_transfers)}")
+    print(f"[xporthls] Unknowns: {len(ir.unknowns)}")
     if ir.warnings:
         print("[xporthls] Warnings:")
         for w in ir.warnings:

@@ -4,6 +4,7 @@ import os
 import re
 from pathlib import Path
 from xporthls.ir.application_ir import ApplicationIR, SourceFile, XrtCall
+from xporthls.scanner.xrt_semantic_extractor import extract_xrt_semantics
 
 
 XRT_PATTERNS = {
@@ -67,6 +68,16 @@ def scan_repository(case_path: str) -> ApplicationIR:
         except Exception as exc:
             ir.warnings.append(f"Could not read {rel}: {exc}")
             continue
+
+        if kind in {"source", "header"}:
+            semantic = extract_xrt_semantics(text, rel)
+            ir.kernel_objects.extend(semantic.kernel_objects)
+            ir.buffers.extend(semantic.buffers)
+            ir.host_transfers.extend(semantic.host_transfers)
+            ir.sync_operations.extend(semantic.sync_operations)
+            ir.kernel_invocations.extend(semantic.kernel_invocations)
+            ir.run_waits.extend(semantic.run_waits)
+            ir.unknowns.extend(semantic.unknowns)
 
         for lineno, line in enumerate(text.splitlines(), start=1):
             for api, pattern in XRT_PATTERNS.items():
